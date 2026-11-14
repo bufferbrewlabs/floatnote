@@ -17,6 +17,10 @@ class BaselineProfileGenerator {
 
     @Test
     fun generate() = rule.collect(packageName = PACKAGE, includeInStartupProfile = true) {
+        // No mic: the overlay service then starts without the microphone type, which a slow
+        // device can be refused (and crash on) once the launch Activity has already finished.
+        // Recording isn't part of what this profiles.
+        device.executeShellCommand("pm revoke $PACKAGE android.permission.RECORD_AUDIO")
         startToNotes()
         writeANote()
         floatTheNote()

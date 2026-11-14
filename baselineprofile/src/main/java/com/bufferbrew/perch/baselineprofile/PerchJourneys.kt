@@ -2,10 +2,12 @@ package com.bufferbrew.perch.baselineprofile
 
 import androidx.benchmark.macro.MacrobenchmarkScope
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.StaleObjectException
 import androidx.test.uiautomator.Until
 
 internal const val PACKAGE = "com.bufferbrew.perch"
 private const val WAIT_MS = 5_000L
+private const val SWIPE_STEPS = 20
 
 /** Cold start to the notes list. */
 internal fun MacrobenchmarkScope.startToNotes() {
@@ -14,18 +16,35 @@ internal fun MacrobenchmarkScope.startToNotes() {
     device.wait(Until.hasObject(By.text("New note")), WAIT_MS)
 }
 
-/** The main note flow: new note, type a line, add a task, back to the list, scroll it. */
+/** The main note flow: new note, type a line, back to the list, scroll it. */
 internal fun MacrobenchmarkScope.writeANote() {
-    device.findObject(By.text("New note"))?.click() ?: return
+    clickText("New note")
     device.waitForIdle()
     device.executeShellCommand("input text Groceries")
     device.waitForIdle()
     device.pressBack() // keyboard
     device.pressBack() // back to the list (predictive back on 13+)
     device.wait(Until.hasObject(By.text("New note")), WAIT_MS)
-    device.findObject(By.scrollable(true))?.let { list ->
-        list.fling(androidx.test.uiautomator.Direction.DOWN)
-        list.fling(androidx.test.uiautomator.Direction.UP)
+    device.waitForIdle()
+    // Raw swipes, not a held list object: screens animate in and out, which leaves held
+    // objects stale.
+    val x = device.displayWidth / 2
+    val top = device.displayHeight / 3
+    val bottom = device.displayHeight * 2 / 3
+    device.swipe(x, bottom, x, top, SWIPE_STEPS)
+    device.swipe(x, top, x, bottom, SWIPE_STEPS)
+    device.waitForIdle()
+}
+
+/** Finds [text] fresh and clicks it, once more if the screen replaced it mid-way. */
+private fun MacrobenchmarkScope.clickText(text: String) {
+    repeat(2) {
+        try {
+            device.wait(Until.findObject(By.text(text)), WAIT_MS)?.click() ?: return
+            return
+        } catch (_: StaleObjectException) {
+            device.waitForIdle()
+        }
     }
 }
 

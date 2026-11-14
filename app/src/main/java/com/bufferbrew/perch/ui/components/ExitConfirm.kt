@@ -12,11 +12,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.bufferbrew.perch.R
 
-/** Back on the app's root screen asks "Exit Perch?" before [onExit] closes it. */
+/**
+ * Back on the app's root screen asks "Exit Perch?" before [onExit] closes it. Pass
+ * [enabled] = false while another screen is showing.
+ */
 @Composable
-fun ExitConfirmBackHandler(onExit: () -> Unit) {
+fun ExitConfirmBackHandler(onExit: () -> Unit, enabled: Boolean = true) {
     var asking by rememberSaveable { mutableStateOf(false) }
-    BackHandler(enabled = !asking) { asking = true }
+    BackHandler(enabled = enabled && !asking) { asking = true }
     if (asking) {
         AlertDialog(
             onDismissRequest = { asking = false },

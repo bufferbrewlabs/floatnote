@@ -37,6 +37,7 @@ import androidx.compose.ui.res.stringResource
 import com.bufferbrew.perch.overlay.OverlayPrefs
 import com.bufferbrew.perch.overlay.OverlayService
 import com.bufferbrew.perch.overlay.openFloatingNote
+import com.bufferbrew.perch.ui.components.ExitConfirmBackHandler
 import com.bufferbrew.perch.ui.components.PillButton
 import com.bufferbrew.perch.ui.editor.NoteEditorContent
 import com.bufferbrew.perch.ui.editor.shareNote
@@ -199,6 +200,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         note == null -> {
+                            ExitConfirmBackHandler(onExit = ::finish)
                             val notes by session.searchResults.collectAsState(initial = emptyList())
                             Column(contentModifier) {
                                 Row(

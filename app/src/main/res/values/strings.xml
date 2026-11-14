@@ -16,6 +16,9 @@
     <string name="back_to_notes">‹ Notes</string>
     <string name="delete">Delete</string>
     <string name="cancel">Cancel</string>
+    <string name="exit">Exit</string>
+    <string name="exit_title">Exit Perch?</string>
+    <string name="exit_message">Are you sure you want to exit?</string>
     <string name="open_floating_note">Open floating note</string>
     <string name="move_window">Drag to move</string>
     <string name="resize_window">Drag to resize</string>

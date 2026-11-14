@@ -41,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import com.bufferbrew.perch.overlay.OverlayPrefs
 import com.bufferbrew.perch.overlay.OverlayService
 import com.bufferbrew.perch.overlay.openFloatingNote
+import com.bufferbrew.perch.ui.components.ExitConfirmBackHandler
 import com.bufferbrew.perch.ui.components.PillButton
 import com.bufferbrew.perch.ui.components.ScreenSwitcher
 import com.bufferbrew.perch.ui.components.rememberLast
@@ -136,6 +137,8 @@ class MainActivity : ComponentActivity() {
                     val note = session.note
                     AutoRecordEffect(note?.id)
                     val stateHolder = rememberSaveableStateHolder()
+                    // Outside the switcher, so a list still sliding out never catches Back.
+                    ExitConfirmBackHandler(enabled = currentScreen() == AppScreen.Notes, onExit = ::finish)
                     ScreenSwitcher(
                         screen = currentScreen(),
                         depth = { if (it == AppScreen.Notes) 0 else 1 },

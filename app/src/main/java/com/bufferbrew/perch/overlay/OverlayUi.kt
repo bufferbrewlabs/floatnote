@@ -1,5 +1,8 @@
 package com.bufferbrew.perch.overlay
 
+import androidx.compose.ui.res.painterResource
+import androidx.compose.material3.Icon
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
@@ -29,7 +32,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -86,6 +88,9 @@ import com.bufferbrew.perch.voice.Waveform
 import com.bufferbrew.perch.voice.sampleAt
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+
+/** The idle record pill shows the record icon; "…" and "!" stay as text status marks. */
+private const val RECORD_MARK = "record"
 
 /** Resting shape of the bubble's waveform, as fractions of full height. */
 private val RestingLevels = listOf(0.12f, 0.35f, 0.75f, 0.35f, 0.12f)
@@ -200,16 +205,16 @@ private fun RowScope.RecordingBar(
     onDone: () -> Unit,
     wave: @Composable () -> Unit,
 ) {
-    RecordPillButton("✕", stringResource(R.string.voice_discard), onCancel)
+    RecordPillButton(R.drawable.ic_close, stringResource(R.string.voice_discard), onCancel)
     if (controls.canPause) {
         RecordPillButton(
-            if (controls.paused) "▶" else "❚❚",
+            if (controls.paused) R.drawable.ic_play else R.drawable.ic_pause,
             stringResource(if (controls.paused) R.string.voice_resume else R.string.voice_pause),
             onPauseToggle,
         )
     }
     Box(drag.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) { wave() }
-    RecordPillButton("✓", stringResource(R.string.voice_done), onDone)
+    RecordPillButton(R.drawable.ic_check, stringResource(R.string.voice_done), onDone)
 }
 
 private enum class BubbleTap { Record, Stop, Retry, Busy }
@@ -222,13 +227,20 @@ private fun BubbleIndicator(voiceState: () -> VoiceState, recording: Boolean, pi
             when (voiceState()) {
                 VoiceState.Transcribing -> "…"
                 is VoiceState.Error -> "!"
-                VoiceState.Idle -> if (pill) "●" else null
+                VoiceState.Idle -> if (pill) RECORD_MARK else null
                 is VoiceState.Recording -> null
             }
         }
     }
     val glyph = symbol
-    if (glyph != null) {
+    if (glyph == RECORD_MARK) {
+        Icon(
+            painterResource(R.drawable.ic_record),
+            contentDescription = null,
+            tint = BubbleColors.Content,
+            modifier = Modifier.size(Dimens.IconInline),
+        )
+    } else if (glyph != null) {
         Text(
             glyph,
             style = MaterialTheme.typography.titleMedium,
@@ -331,7 +343,7 @@ fun OverlayRecordPill(
 
 /** A small round button on the dark pill. */
 @Composable
-private fun RecordPillButton(glyph: String, label: String, onClick: () -> Unit) {
+private fun RecordPillButton(@DrawableRes icon: Int, label: String, onClick: () -> Unit) {
     Box(Modifier.size(Dimens.CompactTouchTarget), contentAlignment = Alignment.Center) {
         Surface(
             onClick = onClick,
@@ -346,7 +358,7 @@ private fun RecordPillButton(glyph: String, label: String, onClick: () -> Unit) 
                 },
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text(glyph, style = MaterialTheme.typography.labelLarge, modifier = Modifier.clearAndSetSemantics {})
+                Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(Dimens.IconSmall))
             }
         }
     }
@@ -596,7 +608,7 @@ private fun PanelHeader(
     val switchLabel = stringResource(R.string.switch_note)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         if (onBack != null) {
-            CircleButton("‹", stringResource(R.string.back_to_notes), onBack, dense = true)
+            CircleButton(R.drawable.ic_back, stringResource(R.string.back_to_notes), onBack, dense = true)
         }
         // The title drags the window; the buttons beside it still take taps.
         Box(
@@ -620,18 +632,18 @@ private fun PanelHeader(
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 if (onTitleTap != null) {
-                    Text(
-                        if (switcherOpen) " ▴" else " ▾",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.clearAndSetSemantics {},
+                    Icon(
+                        painterResource(if (switcherOpen) R.drawable.ic_expand_less else R.drawable.ic_expand_more),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(Dimens.IconSmall),
                     )
                 }
             }
         }
         OpacityButton(opacity, onToggleAdjust, onOpacityDrag, onOpacityDragEnd)
-        CircleButton("–", stringResource(R.string.minimise), onMinimise, dense = true)
-        CircleButton("✕", stringResource(R.string.close_floating), onClose, dense = true)
+        CircleButton(R.drawable.ic_minimise, stringResource(R.string.minimise), onMinimise, dense = true)
+        CircleButton(R.drawable.ic_close, stringResource(R.string.close_floating), onClose, dense = true)
     }
 }
 
@@ -676,7 +688,7 @@ private fun OpacityButton(
                 }
             },
     ) {
-        CircleButton("◐", stringResource(R.string.adjust_window), onTap, dense = true)
+        CircleButton(R.drawable.ic_contrast, stringResource(R.string.adjust_window), onTap, dense = true)
     }
 }
 

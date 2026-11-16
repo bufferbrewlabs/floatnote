@@ -1,10 +1,11 @@
 package com.bufferbrew.perch.ui.list
 
+import androidx.compose.ui.res.painterResource
+import androidx.compose.material3.Icon
 import android.text.format.DateUtils
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -42,8 +43,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -104,9 +103,9 @@ fun NoteListContent(
                             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                             horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceXs),
                         ) {
-                            PillButton(stringResource(R.string.new_note), onCreate, selected = true, dense = true)
-                            onHistory?.let { PillButton(stringResource(R.string.history_title), it, dense = true) }
-                            onDictionary?.let { PillButton(stringResource(R.string.vocab_title), it, dense = true) }
+                            PillButton(stringResource(R.string.new_note), onCreate, selected = true, dense = true, icon = R.drawable.ic_add)
+                            onHistory?.let { PillButton(stringResource(R.string.history_title), it, dense = true, icon = R.drawable.ic_history) }
+                            onDictionary?.let { PillButton(stringResource(R.string.vocab_title), it, dense = true, icon = R.drawable.ic_dictionary) }
                         }
                     } else {
                         Row(
@@ -119,7 +118,7 @@ fun NoteListContent(
                                 style = MaterialTheme.typography.headlineLarge,
                                 modifier = Modifier.weight(1f).semantics { heading() },
                             )
-                            PillButton(stringResource(R.string.new_note), onCreate, selected = true)
+                            PillButton(stringResource(R.string.new_note), onCreate, selected = true, icon = R.drawable.ic_add)
                         }
                     }
                     if (onQueryChange != null) SearchField(query, onQueryChange, compact)
@@ -303,7 +302,7 @@ private fun NoteCard(
                 )
             }
             CircleButton(
-                "⋯", actionsLabel, onActions,
+                R.drawable.ic_more, actionsLabel, onActions,
                 modifier = Modifier.padding(top = Dimens.SpaceXs, end = Dimens.SpaceXs),
                 dense = compact,
             )
@@ -336,14 +335,10 @@ private fun SearchField(query: String, onChange: (String) -> Unit, compact: Bool
         shape = RoundedCornerShape(Dimens.CornerL),
         textStyle = if (compact) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge,
         leadingIcon = {
-            Canvas(Modifier.size(Dimens.Icon)) {
-                val stroke = Dimens.FocusRing.toPx()
-                drawCircle(color, radius = size.width / 4, center = center * 0.8f, style = Stroke(stroke))
-                drawLine(color, center * 1.15f, center * 1.65f, stroke, cap = StrokeCap.Round)
-            }
+            Icon(painterResource(R.drawable.ic_search), contentDescription = null, tint = color)
         },
         trailingIcon = if (query.isEmpty()) null else {
-            { CircleButton("✕", stringResource(R.string.search_clear), { onChange("") }, dense = compact) }
+            { CircleButton(R.drawable.ic_close, stringResource(R.string.search_clear), { onChange("") }, dense = compact) }
         },
         modifier = Modifier.fillMaxWidth(),
     )

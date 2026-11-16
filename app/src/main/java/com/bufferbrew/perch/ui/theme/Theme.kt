@@ -191,6 +191,9 @@ object Dimens {
     /** Page margin from medium width up (tablets, unfolded foldables); phones use [SpaceM]. */
     val GutterWide = 24.dp
     val Icon = 24.dp
+    /** Icons inside buttons and chips; [IconSmall] in the dense (floating) style. */
+    val IconInline = 18.dp
+    val IconSmall = 16.dp
     val NoteCardWidth = 220.dp
     val ReadingWidth = 720.dp
     /** How far a screen slides as it comes in or goes out. Opacity does most of the work. */

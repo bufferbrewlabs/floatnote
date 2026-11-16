@@ -166,6 +166,7 @@ fun HistoryContent(
                                         stringResource(if (playing) R.string.history_stop_playing else R.string.history_play),
                                         { if (playing) player.stop() else player.play(entry.id, audio) },
                                         dense = compact,
+                                        icon = if (playing) R.drawable.ic_stop else R.drawable.ic_play,
                                     )
                                     if (onTranscribeAgain != null) {
                                         PillButton(stringResource(R.string.history_transcribe_again), { onTranscribeAgain(entry) }, dense = compact)

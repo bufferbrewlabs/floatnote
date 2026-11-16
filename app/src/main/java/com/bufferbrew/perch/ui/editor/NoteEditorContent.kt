@@ -1,5 +1,8 @@
 package com.bufferbrew.perch.ui.editor
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.res.painterResource
+import androidx.compose.material3.Icon
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -56,7 +59,6 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -307,7 +309,14 @@ private fun BlockRow(
             IconButton(
                 onClick = { actions.onRemove(block.id) },
                 modifier = Modifier.semantics { contentDescription = label },
-            ) { Text("✕", modifier = Modifier.clearAndSetSemantics {}) }
+            ) {
+                Icon(
+                    painterResource(R.drawable.ic_close),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(Dimens.IconInline),
+                )
+            }
         }
     }
 }
@@ -370,6 +379,7 @@ private fun EditorToolbar(
                 onClick = onMic,
                 selected = true,
                 dense = dense,
+                icon = if (recording) R.drawable.ic_stop else R.drawable.ic_record,
             )
             val toolsState = stringResource(if (showTools) R.string.tools_expanded else R.string.tools_collapsed)
             PillButton(
@@ -380,8 +390,8 @@ private fun EditorToolbar(
                 dense = dense,
             )
             if (!dense) {
-                PillButton(stringResource(R.string.edit_undo), actions::onUndo, enabled = canUndo)
-                PillButton(stringResource(R.string.edit_redo), actions::onRedo, enabled = canRedo)
+                PillButton(stringResource(R.string.edit_undo), actions::onUndo, enabled = canUndo, icon = R.drawable.ic_undo)
+                PillButton(stringResource(R.string.edit_redo), actions::onRedo, enabled = canRedo, icon = R.drawable.ic_redo)
             }
         }
         AnimatedVisibility(
@@ -411,16 +421,18 @@ private fun EditorToolbar(
                     onClick = actions::onOrganise,
                     dense = dense,
                     enabled = !busy,
+                    icon = R.drawable.ic_sparkle,
                 )
                 PillButton(
                     text = stringResource(if (summarising) R.string.ai_summarising else R.string.ai_summarise),
                     onClick = actions::onSummarise,
                     dense = dense,
                     enabled = !busy,
+                    icon = R.drawable.ic_sparkle,
                 )
                 if (dense) {
-                    PillButton(stringResource(R.string.edit_undo), actions::onUndo, dense = true, enabled = canUndo)
-                    PillButton(stringResource(R.string.edit_redo), actions::onRedo, dense = true, enabled = canRedo)
+                    PillButton(stringResource(R.string.edit_undo), actions::onUndo, dense = true, enabled = canUndo, icon = R.drawable.ic_undo)
+                    PillButton(stringResource(R.string.edit_redo), actions::onRedo, dense = true, enabled = canRedo, icon = R.drawable.ic_redo)
                 }
                 PillButton(
                     text = stringResource(
@@ -436,7 +448,7 @@ private fun EditorToolbar(
                     selected = taskMode == TaskCompletionMode.MoveToBottom,
                     dense = dense,
                 )
-                if (onShare != null) PillButton(stringResource(R.string.share_note), onShare, dense = dense)
+                if (onShare != null) PillButton(stringResource(R.string.share_note), onShare, dense = dense, icon = R.drawable.ic_share)
             }
             if (dense) {
                 Row(

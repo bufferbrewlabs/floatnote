@@ -1,5 +1,6 @@
 package com.bufferbrew.perch
 
+import com.bufferbrew.perch.ui.components.BackButton
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -24,7 +25,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -299,6 +299,7 @@ class MainActivity : ComponentActivity() {
             text = stringResource(R.string.float_button),
             onClick = ::float,
             selected = true,
+            icon = R.drawable.ic_float_window,
         )
     }
 
@@ -371,7 +372,5 @@ private sealed interface AppScreen {
 
 @Composable
 private fun BackToNotes(onClick: () -> Unit) {
-    TextButton(onClick = onClick) {
-        Text(stringResource(R.string.back_to_notes), color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
+    BackButton(stringResource(R.string.back_to_notes), onClick)
 }

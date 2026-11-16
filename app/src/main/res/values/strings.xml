@@ -17,7 +17,7 @@
     <string name="no_notes">No notes yet</string>
     <string name="no_notes_help">Start a note to write, make a checklist, or record your voice.</string>
     <string name="untitled">Untitled</string>
-    <string name="back_to_notes">‹ Notes</string>
+    <string name="back_to_notes">Notes</string>
     <string name="delete">Delete</string>
     <string name="cancel">Cancel</string>
     <string name="exit">Exit</string>
@@ -47,8 +47,8 @@
     <string name="overlay_channel">Floating note</string>
     <string name="overlay_notification_title">Floating note is open</string>
     <string name="overlay_notification_text">Tap to show it</string>
-    <string name="voice_record">● Record</string>
-    <string name="voice_stop">■ Stop</string>
+    <string name="voice_record">Record</string>
+    <string name="voice_stop">Stop</string>
     <string name="voice_discard">Discard recording</string>
     <string name="voice_done">Stop and add to note</string>
     <string name="pill_record">Record into the note</string>
@@ -68,8 +68,8 @@
     <string name="markdown_stop">Stop</string>
     <string name="markdown_done">Notes are saved to the folder as Markdown.</string>
     <string name="markdown_stopped">Stopped saving Markdown files. Files already there stay.</string>
-    <string name="history_play">▶ Play</string>
-    <string name="history_stop_playing">■ Stop</string>
+    <string name="history_play">Play</string>
+    <string name="history_stop_playing">Stop</string>
     <string name="history_transcribe_again">Transcribe again</string>
     <string name="history_transcribe_busy">Finish the current recording first.</string>
     <string name="voice_listening_phone">Phone recognizer · %1$s</string>
@@ -113,10 +113,10 @@
     <string name="settings_mic_granted">Allowed</string>
     <string name="settings_mic_allow">Allow microphone</string>
     <string name="overlay_permission_needed">Allow Perch to display over other apps, then try again</string>
-    <string name="ai_organise">✦ Organise</string>
+    <string name="ai_organise">Organise</string>
     <string name="ai_organising">Organising…</string>
     <string name="ai_organised">Organised with AI</string>
-    <string name="ai_summarise">✦ Summarise</string>
+    <string name="ai_summarise">Summarise</string>
     <string name="ai_summarising">Summarising…</string>
     <string name="ai_summarised">Summary and action items added</string>
     <string name="ai_undo">Undo</string>
@@ -205,9 +205,9 @@
     <string name="palette_classic">Classic cream</string>
     <string name="palette_mono">Black and white</string>
     <string name="settings_page_floating_help">What the Edge panel, tile and Floating Perch icon open</string>
-    <string name="back_to_settings">‹ Settings</string>
-    <string name="edit_undo">↶ Undo</string>
-    <string name="edit_redo">↷ Redo</string>
+    <string name="back_to_settings">Settings</string>
+    <string name="edit_undo">Undo</string>
+    <string name="edit_redo">Redo</string>
     <string name="search_hint">Search notes</string>
     <string name="search_clear">Clear</string>
     <string name="search_none">No notes match</string>

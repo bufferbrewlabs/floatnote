@@ -138,10 +138,21 @@ class OverlayService : Service() {
         } else {
             0
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && hasMicPermission()) {
+        val withMic = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && hasMicPermission()
+        if (withMic) {
             type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
         }
-        ServiceCompat.startForeground(this, NOTIFICATION_ID, notification(), type)
+        try {
+            ServiceCompat.startForeground(this, NOTIFICATION_ID, notification(), type)
+        } catch (e: SecurityException) {
+            // Android 14+ refuses the microphone type once the app has left the "while in use"
+            // state, e.g. a slow phone where the launch Activity finished before we got here.
+            // Open the floating note anyway, without background mic access, rather than crash.
+            if (!withMic) throw e
+            ServiceCompat.startForeground(
+                this, NOTIFICATION_ID, notification(), type and ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE.inv(),
+            )
+        }
     }
 
     private fun notification(): Notification {

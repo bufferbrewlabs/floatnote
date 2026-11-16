@@ -1,5 +1,6 @@
 package com.bufferbrew.perch.ui.theme
 
+import androidx.annotation.ChecksSdkIntAtLeast
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
@@ -201,6 +202,7 @@ private val AppShapes = Shapes(
 val LocalDenseTouchTarget = staticCompositionLocalOf { Dimens.CompactTouchTarget }
 
 /** Material You colours need Android 12 (S); older phones show Indigo for [AppPalette.System]. */
+@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.S)
 fun supportsDynamicColor(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
 /** The floating bubble is always dark, whatever the theme, so it reads over any app. */
@@ -269,23 +271,24 @@ fun PerchTheme(
     val context = LocalContext.current
     val scheme = remember(palette, paper, systemDark, context) {
         val (light, darkSwatch) = swatchesFor(palette)
-        val dynamic = if (palette == AppPalette.System && supportsDynamicColor()) {
+        val useDynamic = palette == AppPalette.System && supportsDynamicColor()
+        val dynamic = if (useDynamic) {
             if (systemDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         } else {
             null
         }
+        // The wallpaper's light accent, for buttons on a sticky-note paper.
+        val dynamicAccent = if (useDynamic) dynamicLightColorScheme(context) else null
         // A paper colour is always light, whatever the system setting. With System colours it
         // keeps its paper but takes the wallpaper's accent for buttons.
         paperSwatch(paper, light)?.toScheme(dark = false)?.let { paperScheme ->
-            if (dynamic == null) paperScheme else dynamicLightColorScheme(context).let { accent ->
-                paperScheme.copy(
-                    primary = accent.primary,
-                    onPrimary = accent.onPrimary,
-                    tertiary = accent.primary,
-                    onTertiary = accent.onPrimary,
-                    surfaceTint = accent.primary,
-                )
-            }
+            if (dynamicAccent == null) paperScheme else paperScheme.copy(
+                primary = dynamicAccent.primary,
+                onPrimary = dynamicAccent.onPrimary,
+                tertiary = dynamicAccent.primary,
+                onTertiary = dynamicAccent.onPrimary,
+                surfaceTint = dynamicAccent.primary,
+            )
         } ?: dynamic ?: (if (systemDark) darkSwatch else light).toScheme(systemDark)
     }
     MaterialTheme(

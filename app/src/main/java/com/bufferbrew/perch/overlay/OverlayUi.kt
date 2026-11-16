@@ -1,5 +1,6 @@
 package com.bufferbrew.perch.overlay
 
+import com.bufferbrew.perch.ui.theme.LocalDenseTouchTarget
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Color
@@ -383,6 +384,8 @@ fun OverlayPanel(
     voiceState: () -> VoiceState,
     voiceActions: VoiceActions,
     panelSize: PanelSize?,
+    /** Medium-sized or larger: controls get full 48 dp touch areas. */
+    roomy: Boolean,
     onPanelSize: (PanelSize) -> Unit,
     opacity: Float,
     /** What the panel draws at now: [opacity], or fully visible while it's in use. */
@@ -418,7 +421,13 @@ fun OverlayPanel(
 
     val paperColor = MaterialTheme.colorScheme.surface.copy(alpha = if (focusedNote) FocusedNoteBackgroundAlpha else 1f)
     val edgeColor = MaterialTheme.colorScheme.outlineVariant
-    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dimens.CompactTouchTarget) {
+    // Touch areas: 36 dp in a small panel, the full 48 dp once it is Medium or larger. Controls
+    // keep their dense look either way; only the area that takes the tap grows.
+    val touchTarget = if (roomy) Dimens.TouchTarget else Dimens.CompactTouchTarget
+    CompositionLocalProvider(
+        LocalMinimumInteractiveComponentSize provides touchTarget,
+        LocalDenseTouchTarget provides touchTarget,
+    ) {
         Surface(
             // Two-stage fade (PanelOpacity): the paper and its edge take your opacity, drawn
             // here; the content keeps its own, so text stays readable until the slider's
@@ -631,7 +640,7 @@ private fun PanelHeader(
         Box(
             modifier = Modifier
                 .weight(1f)
-                .heightIn(min = Dimens.CompactTouchTarget)
+                .heightIn(min = LocalDenseTouchTarget.current)
                 .windowDrag(onDragStart = onMoveStart, onDrag = onMove, onDragEnd = onMoveEnd, onTap = onTitleTap)
                 .semantics {
                     contentDescription = moveLabel

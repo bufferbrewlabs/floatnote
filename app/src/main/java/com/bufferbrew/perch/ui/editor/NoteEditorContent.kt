@@ -1,5 +1,6 @@
 package com.bufferbrew.perch.ui.editor
 
+import com.bufferbrew.perch.ui.theme.LocalDenseTouchTarget
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.Icon
@@ -152,7 +153,7 @@ fun NoteEditorContent(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = if (compact) Dimens.CompactTouchTarget else Dimens.TouchTarget)
+                            .heightIn(min = if (compact) LocalDenseTouchTarget.current else Dimens.TouchTarget)
                             .clickable { actions.onAddBlock(BlockType.Text) }
                             .padding(vertical = Dimens.SpaceM),
                     )

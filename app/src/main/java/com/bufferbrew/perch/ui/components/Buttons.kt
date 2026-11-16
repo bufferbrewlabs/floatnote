@@ -1,5 +1,6 @@
 package com.bufferbrew.perch.ui.components
 
+import com.bufferbrew.perch.ui.theme.LocalDenseTouchTarget
 import com.bufferbrew.perch.R
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.background
@@ -105,7 +106,7 @@ fun CircleButton(
         enabled = enabled,
         interactionSource = interactionSource,
         modifier = modifier
-            .size(if (dense) Dimens.CompactTouchTarget else Dimens.TouchTarget)
+            .size(if (dense) LocalDenseTouchTarget.current else Dimens.TouchTarget)
             .semantics { contentDescription = label },
     ) {
         Box(

@@ -1,5 +1,6 @@
 package com.bufferbrew.perch.ui.list
 
+import com.bufferbrew.perch.ui.theme.LocalDenseTouchTarget
 import androidx.compose.ui.semantics.selected
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -308,7 +309,7 @@ private fun NoteCard(
         Row(verticalAlignment = Alignment.Top) {
             Column(
                 Modifier.weight(1f)
-                    .heightIn(min = if (compact) Dimens.CompactTouchTarget else Dimens.TouchTarget)
+                    .heightIn(min = if (compact) LocalDenseTouchTarget.current else Dimens.TouchTarget)
                     .combinedClickable(
                         interactionSource = interactionSource,
                         indication = LocalIndication.current,

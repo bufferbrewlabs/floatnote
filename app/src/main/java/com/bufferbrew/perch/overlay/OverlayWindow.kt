@@ -105,6 +105,9 @@ class OverlayWindow(
     /** The panel is too small for the note and shows only the record pill. */
     private var compact by mutableStateOf(false)
 
+    /** The panel is at least Medium-sized: its controls get full 48 dp touch areas. */
+    private var roomy by mutableStateOf(false)
+
     /** A corner resize is in progress (the grip must outlive a switch to or from [compact]). */
     private var resizing by mutableStateOf(false)
 
@@ -120,6 +123,7 @@ class OverlayWindow(
     init {
         panelPreset = matchingPreset()
         compact = isCompact(panel)
+        roomy = panel.width >= dp(PanelSize.Medium.widthDp)
     }
 
     private fun matchingPreset(): PanelSize? = PanelSize.entries.firstOrNull {
@@ -303,6 +307,7 @@ class OverlayWindow(
                             opacity = opacity,
                             shownOpacity = { shownOpacity },
                             panelSize = panelPreset,
+                            roomy = roomy,
                             onPanelSize = ::applyPanelSize,
                             paper = paper,
                             onPaperCycle = ::cyclePaper,
@@ -420,6 +425,7 @@ class OverlayWindow(
 
     private fun update() {
         compact = isCompact(panel)
+        roomy = panel.width >= dp(PanelSize.Medium.widthDp)
         if (!attached) return
         applyLayout()
         windowManager.updateViewLayout(root, params)

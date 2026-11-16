@@ -1,5 +1,6 @@
 package com.bufferbrew.perch.ui.theme
 
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.ui.platform.LocalContext
@@ -192,6 +193,12 @@ private val AppShapes = Shapes(
     large = RoundedCornerShape(Dimens.CornerLg),
     extraLarge = RoundedCornerShape(Dimens.CornerL),
 )
+
+/**
+ * Touch area of dense (floating panel) controls. 36 dp by default and in a small panel; the
+ * panel provides the full 48 dp once it is Medium-sized or larger. Their look stays dense.
+ */
+val LocalDenseTouchTarget = staticCompositionLocalOf { Dimens.CompactTouchTarget }
 
 /** Material You colours need Android 12 (S); older phones show Indigo for [AppPalette.System]. */
 fun supportsDynamicColor(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S

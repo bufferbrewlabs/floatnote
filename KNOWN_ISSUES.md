@@ -243,3 +243,10 @@
 - Ceiling (when this breaks): a screen added outside `ScreenSwitcher` gets no transition and no predictive back; an animation timed with `delay()` ignores "Remove animations".
 - Upgrade trigger (what to do when it's hit): route new screens through `AppScreen` / `PanelScreen`; take timings from `Motion`.
 - Status: open
+
+## 2026-11-16 — Floating note opens without the microphone type if Android refuses it
+- What: `OverlayService.startInForeground` asks for `specialUse|microphone`. Android 14+ refuses the microphone type (`SecurityException`, "must be in the eligible state") once the app has left the while-in-use state, which happened on a lagging emulator when `FloatLaunchActivity` had finished before the service reached `startForeground`. That crashed the app. It now retries with `specialUse` only, so the floating note opens.
+- Shortcut: in that fallback the service has no microphone type, so recording while another app is in front may be silenced or refused by Android. Not checked on a device; the fallback itself was seen to be needed only on a very slow emulator.
+- Ceiling (when this breaks): if this shows up on real phones, voice from the bubble over other apps would quietly fail after a slow launch.
+- Upgrade trigger (what to do when it's hit): note the fallback in the service and, on the next Record, restart the service from `FloatLaunchActivity` (a visible Activity) to regain the microphone type before recording.
+- Status: open

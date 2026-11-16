@@ -190,7 +190,9 @@ Run `./gradlew testDebugUnitTest` and `assembleDebug` before calling a change do
   tile click, never from a background broadcast.
 - The overlay service declares `specialUse|microphone`; it adds the microphone type only when
   RECORD_AUDIO is granted (declaring it without the permission throws). Started from a visible
-  Activity, that keeps background mic access while another app is in front.
+  Activity, that keeps background mic access while another app is in front. Android 14+ can still
+  refuse the microphone type if the app left the while-in-use state first (a slow launch): the
+  service then retries with `specialUse` only instead of crashing (see KNOWN_ISSUES).
 - Activities (including the permission prompt) draw *under* overlay windows: minimise the
   overlay before opening one (`AppVoiceActions(beforeOpeningScreen = …)`).
 - The `<queries>` entry for `android.speech.RecognitionService` is required: without it,

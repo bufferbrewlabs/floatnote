@@ -410,7 +410,7 @@ fun OverlayPanel(
             showDictionary = false
         }
     }
-    val shape = RoundedCornerShape(Dimens.CornerL)
+    val shape = MaterialTheme.shapes.extraLarge
 
     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dimens.CompactTouchTarget) {
         Surface(

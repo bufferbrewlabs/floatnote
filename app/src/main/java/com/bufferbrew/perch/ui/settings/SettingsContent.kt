@@ -8,7 +8,6 @@ import androidx.compose.material3.Icon
 import com.bufferbrew.perch.ui.components.BackButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -149,7 +148,7 @@ private fun SettingsMenu(onOpen: (SettingsPage) -> Unit) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(Dimens.CornerL))
+                    .clip(MaterialTheme.shapes.extraLarge)
                     .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .clickable { onOpen(target) }
                     .padding(Dimens.SpaceM),

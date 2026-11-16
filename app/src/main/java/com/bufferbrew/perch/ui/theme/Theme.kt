@@ -1,5 +1,7 @@
 package com.bufferbrew.perch.ui.theme
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Shapes
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -178,6 +180,19 @@ private val AppTypography = Typography().let { base ->
     )
 }
 
+/**
+ * One corner scale for Material components and our own surfaces: [Shapes.medium] for rows,
+ * strips and compact cards, [Shapes.extraLarge] for cards and the floating panel. Chips and
+ * buttons are pills (CircleShape).
+ */
+private val AppShapes = Shapes(
+    extraSmall = RoundedCornerShape(Dimens.CornerXs),
+    small = RoundedCornerShape(Dimens.CornerS),
+    medium = RoundedCornerShape(Dimens.CornerM),
+    large = RoundedCornerShape(Dimens.CornerLg),
+    extraLarge = RoundedCornerShape(Dimens.CornerL),
+)
+
 /** Material You colours need Android 12 (S); older phones show Indigo for [AppPalette.System]. */
 fun supportsDynamicColor(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
@@ -195,7 +210,7 @@ object Dimens {
     val SpaceXs = 4.dp
     val SpaceS = 8.dp
     val SpaceM = 16.dp
-    val SpaceL = 20.dp
+    val SpaceL = 24.dp
     val SpaceXl = 32.dp
     /** Page margin from medium width up (tablets, unfolded foldables); phones use [SpaceM]. */
     val GutterWide = 24.dp
@@ -211,7 +226,10 @@ object Dimens {
     val ScreenSlide = 32.dp
     /** How far a pressed bubble or pill dips. */
     const val PressedScale = 0.94f
+    val CornerXs = 4.dp
+    val CornerS = 8.dp
     val CornerM = 12.dp
+    val CornerLg = 16.dp
     val CornerL = 24.dp
     val Hairline = 1.dp
     /** Dragging the floating panel's ◐ this far moves its opacity across the whole range. */
@@ -224,7 +242,7 @@ object Dimens {
     // Floating panel: slimmer chrome than the full app.
     val CompactTouchTarget = 36.dp
     val CompactButton = 28.dp
-    val CompactChipHeight = 30.dp
+    val CompactChipHeight = 32.dp
     val GrabberWidth = 36.dp
     val GrabberHeight = 4.dp
     val WaveBarWidth = 3.dp
@@ -264,6 +282,7 @@ fun PerchTheme(
     MaterialTheme(
         colorScheme = scheme,
         typography = AppTypography,
+        shapes = AppShapes,
         content = content,
     )
 }

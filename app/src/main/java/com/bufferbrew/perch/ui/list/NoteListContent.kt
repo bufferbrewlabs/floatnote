@@ -31,7 +31,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -138,7 +137,7 @@ fun NoteListContent(
                         Column(
                             Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(Dimens.CornerL))
+                                .clip(MaterialTheme.shapes.extraLarge)
                                 .background(colors.surfaceContainerLow)
                                 .padding(if (compact) Dimens.SpaceM else Dimens.SpaceXl),
                             verticalArrangement = Arrangement.spacedBy(Dimens.SpaceS),
@@ -205,7 +204,7 @@ fun NoteListContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = Dimens.SpaceXs)
-                    .clip(RoundedCornerShape(Dimens.CornerM))
+                    .clip(MaterialTheme.shapes.medium)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(start = Dimens.SpaceM)
                     .semantics { liveRegion = LiveRegionMode.Polite },
@@ -271,7 +270,7 @@ private fun NoteCard(
 ) {
     val colors = MaterialTheme.colorScheme
     val typography = MaterialTheme.typography
-    val shape = RoundedCornerShape(if (compact) Dimens.CornerM else Dimens.CornerL)
+    val shape = if (compact) MaterialTheme.shapes.medium else MaterialTheme.shapes.extraLarge
     val actionsLabel = stringResource(R.string.note_actions)
     val interactionSource = remember { MutableInteractionSource() }
     val focused by interactionSource.collectIsFocusedAsState()
@@ -361,7 +360,7 @@ private fun SearchField(query: String, onChange: (String) -> Unit, compact: Bool
         onValueChange = onChange,
         label = { Text(stringResource(R.string.search_hint)) },
         singleLine = true,
-        shape = RoundedCornerShape(Dimens.CornerL),
+        shape = MaterialTheme.shapes.extraLarge,
         textStyle = if (compact) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge,
         leadingIcon = {
             Icon(painterResource(R.drawable.ic_search), contentDescription = null, tint = color)

@@ -1,5 +1,14 @@
 package com.bufferbrew.perch
 
+import com.bufferbrew.perch.domain.model.Note
+import com.bufferbrew.perch.ui.components.CircleButton
+import com.bufferbrew.perch.ui.theme.Motion
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.Crossfade
+import androidx.activity.compose.BackHandler
 import com.bufferbrew.perch.ui.components.BackButton
 import android.Manifest
 import android.content.Context
@@ -127,11 +136,11 @@ class MainActivity : ComponentActivity() {
             val palette by app.palette.collectAsState()
             // Material 3 margins: 16 dp on phones, 24 dp from medium width up. Columns and the
             // reading width are worked out from the content's own slot, not from this.
-            val gutter = if (calculateWindowSizeClass(this).widthSizeClass == WindowWidthSizeClass.Compact) {
-                Dimens.SpaceM
-            } else {
-                Dimens.GutterWide
-            }
+            val widthClass = calculateWindowSizeClass(this).widthSizeClass
+            val gutter = if (widthClass == WindowWidthSizeClass.Compact) Dimens.SpaceM else Dimens.GutterWide
+            // Expanded width (landscape tablets, unfolded foldables): the list and the open note
+            // side by side. Phones and portrait tablets keep one screen at a time.
+            val twoPane = widthClass == WindowWidthSizeClass.Expanded
             PerchTheme(palette) {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     val note = session.note
@@ -139,10 +148,14 @@ class MainActivity : ComponentActivity() {
                     val stateHolder = rememberSaveableStateHolder()
                     // Outside the switcher, so a list still sliding out never catches Back.
                     ExitConfirmBackHandler(enabled = currentScreen() == AppScreen.Notes, onExit = ::finish)
+                    // Two panes: the list and the note are one screen, so Back closes the note
+                    // in place (registered after the exit handler, so it wins while a note is open).
+                    BackHandler(enabled = twoPane && note != null, onBack = ::goBack)
+                    val shownScreen = currentScreen().let { if (twoPane && it is AppScreen.Editor) AppScreen.Notes else it }
                     ScreenSwitcher(
-                        screen = currentScreen(),
+                        screen = shownScreen,
                         depth = { if (it == AppScreen.Notes) 0 else 1 },
-                        backTo = AppScreen.Notes.takeIf { currentScreen() != AppScreen.Notes },
+                        backTo = AppScreen.Notes.takeIf { shownScreen != AppScreen.Notes },
                         onBack = ::goBack,
                         contentAlignment = Alignment.TopCenter,
                         modifier = Modifier.fillMaxSize().safeDrawingPadding().imePadding(),
@@ -206,12 +219,13 @@ class MainActivity : ComponentActivity() {
                             }
                             AppScreen.Notes -> stateHolder.SaveableStateProvider("notes") {
                                 val notes by session.searchResults.collectAsState(initial = null as List<NoteSummary>?)
-                                NoteListContent(
+                                val list: @Composable (Modifier) -> Unit = { listModifier -> NoteListContent(
                                     notes = notes,
                                     onOpen = session::open,
                                     onCreate = session::createNote,
                                     onDelete = session::deleteNote,
-                                    modifier = contentModifier,
+                                    modifier = listModifier,
+                                    selectedId = if (twoPane) note?.id else null,
                                     onHistory = { showHistory = true },
                                     onDictionary = { showDictionary = true },
                                     onSettings = { showSettings = true },
@@ -224,35 +238,89 @@ class MainActivity : ComponentActivity() {
                                     onPin = session::setPinned,
                                     categoryFilter = session.categoryFilter,
                                     onCategoryFilter = { session.categoryFilter = it },
-                                )
+                                ) }
+                                if (twoPane) {
+                                    Row(Modifier.fillMaxSize()) {
+                                        list(Modifier.width(Dimens.ListPaneWidth).fillMaxHeight().padding(start = gutter, end = Dimens.SpaceM))
+                                        VerticalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                        // Picking another note cross-fades: notes are peers here.
+                                        Crossfade(
+                                            targetState = note?.id,
+                                            animationSpec = Motion.fade(Motion.Standard),
+                                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                                            label = "openNote",
+                                        ) { id ->
+                                            val shown = rememberLast(session.note?.takeIf { it.id == id })
+                                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                                                if (id == null || shown == null) {
+                                                    EmptyNotePane(Modifier.fillMaxSize().padding(horizontal = gutter))
+                                                } else {
+                                                    NoteEditorPane(
+                                                        shown,
+                                                        voiceActions,
+                                                        twoPane = true,
+                                                        modifier = Modifier.widthIn(max = Dimens.ReadingWidth).fillMaxSize().padding(horizontal = gutter),
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    list(contentModifier)
+                                }
                             }
                             is AppScreen.Editor -> {
                                 // Still drawn for a moment after closing, while it slides out.
                                 val shown = rememberLast(session.note?.takeIf { it.id == screen.noteId }) ?: return@ScreenSwitcher
-                                Column(contentModifier) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        BackToNotes(::goBack)
-                                        Spacer(Modifier.weight(1f))
-                                        FloatButton()
-                                    }
-                                    NoteEditorContent(
-                                        note = shown,
-                                        pendingFocus = session.pendingFocus,
-                                        actions = session,
-                                        voiceState = { app.voice.state },
-                                        voiceActions = voiceActions,
-                                        modifier = Modifier.weight(1f),
-                                        assist = session.assist,
-                                        canUndo = session.canUndo,
-                                        canRedo = session.canRedo,
-                                        onShare = { shareNote(shown) },
-                                    )
-                                }
+                                NoteEditorPane(shown, voiceActions, twoPane = false, modifier = contentModifier)
                             }
                         }
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * The open note with its top row: "‹ Notes" on a phone, a close button beside the list in
+     * two panes. The same editor as the floating panel.
+     */
+    @Composable
+    private fun NoteEditorPane(shown: Note, voiceActions: AppVoiceActions, twoPane: Boolean, modifier: Modifier) {
+        Column(modifier) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (twoPane) {
+                    CircleButton(R.drawable.ic_close, stringResource(R.string.close_note), ::goBack)
+                } else {
+                    BackToNotes(::goBack)
+                }
+                Spacer(Modifier.weight(1f))
+                FloatButton()
+            }
+            NoteEditorContent(
+                note = shown,
+                pendingFocus = session.pendingFocus,
+                actions = session,
+                voiceState = { app.voice.state },
+                voiceActions = voiceActions,
+                modifier = Modifier.weight(1f),
+                assist = session.assist,
+                canUndo = session.canUndo,
+                canRedo = session.canRedo,
+                onShare = { shareNote(shown) },
+            )
+        }
+    }
+
+    /** The right-hand pane with no note open. */
+    @Composable
+    private fun EmptyNotePane(modifier: Modifier) {
+        Box(modifier, contentAlignment = Alignment.Center) {
+            Text(
+                stringResource(R.string.two_pane_empty),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 

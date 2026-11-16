@@ -1,5 +1,6 @@
 package com.bufferbrew.perch.ui.list
 
+import androidx.compose.ui.semantics.selected
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -87,6 +88,8 @@ fun NoteListContent(
     onCategoryFilter: ((NoteCategory?) -> Unit)? = null,
     onSettings: (() -> Unit)? = null,
     onFloat: (() -> Unit)? = null,
+    /** The note open beside the list (two panes), highlighted. */
+    selectedId: String? = null,
 ) {
     var actionsFor by rememberSaveable { mutableStateOf<String?>(null) }
     val gap = if (compact) Dimens.SpaceXs else Dimens.SpaceM
@@ -167,6 +170,7 @@ fun NoteListContent(
                         summary = summary,
                         compact = compact,
                         showCategory = summary.category != categoryFilter,
+                    selected = summary.id == selectedId,
                         showActions = showActions,
                         onOpen = { onOpen(summary.id) },
                         onActions = { actionsFor = if (showActions) null else summary.id },
@@ -262,6 +266,7 @@ private fun NoteCard(
     compact: Boolean,
     showCategory: Boolean,
     showActions: Boolean,
+    selected: Boolean,
     onOpen: () -> Unit,
     onActions: () -> Unit,
     onPin: (() -> Unit)?,
@@ -286,7 +291,14 @@ private fun NoteCard(
     Column(
         modifier.fillMaxWidth()
             .clip(shape)
-            .background(if (summary.pinned) colors.primaryContainer else colors.surfaceContainerLow)
+            .background(
+                when {
+                    selected -> colors.secondaryContainer
+                    summary.pinned -> colors.primaryContainer
+                    else -> colors.surfaceContainerLow
+                },
+            )
+            .semantics { this.selected = selected }
             .border(
                 if (focused) Dimens.FocusRing else Dimens.Hairline,
                 if (focused) colors.primary else colors.outlineVariant,

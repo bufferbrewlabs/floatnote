@@ -190,6 +190,8 @@ object Dimens {
     val SpaceXl = 32.dp
     /** Page margin from medium width up (tablets, unfolded foldables); phones use [SpaceM]. */
     val GutterWide = 24.dp
+    /** Space under a list for a floating action button (56 dp tall) and its margin. */
+    val FabClearance = 80.dp
     val Icon = 24.dp
     /** Icons inside buttons and chips; [IconSmall] in the dense (floating) style. */
     val IconInline = 18.dp

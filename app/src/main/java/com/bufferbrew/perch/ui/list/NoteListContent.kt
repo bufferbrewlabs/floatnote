@@ -1,5 +1,10 @@
 package com.bufferbrew.perch.ui.list
 
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.Icon
 import android.text.format.DateUtils
@@ -15,7 +20,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,7 +32,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -88,103 +91,112 @@ fun NoteListContent(
 ) {
     var actionsFor by rememberSaveable { mutableStateOf<String?>(null) }
     val gap = if (compact) Dimens.SpaceXs else Dimens.SpaceM
+    val gridState = rememberLazyGridState()
+    // The New note button shows its label at the top of the list and shrinks to its icon once
+    // you scroll, so it covers less of the notes.
+    val fabExpanded by remember { derivedStateOf { gridState.firstVisibleItemIndex == 0 } }
     Column(modifier) {
-        LazyVerticalGrid(
-            columns = if (compact) GridCells.Fixed(1) else GridCells.Adaptive(Dimens.NoteCardWidth),
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = PaddingValues(top = gap, bottom = gap),
-            horizontalArrangement = Arrangement.spacedBy(gap),
-            verticalArrangement = Arrangement.spacedBy(gap),
-        ) {
-            item(key = "header", span = { GridItemSpan(maxLineSpan) }, contentType = "header") {
-                Column(verticalArrangement = Arrangement.spacedBy(gap)) {
-                    if (compact) {
-                        Row(
-                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceXs),
-                        ) {
-                            PillButton(stringResource(R.string.new_note), onCreate, selected = true, dense = true, icon = R.drawable.ic_add)
-                            onHistory?.let { PillButton(stringResource(R.string.history_title), it, dense = true, icon = R.drawable.ic_history) }
-                            onDictionary?.let { PillButton(stringResource(R.string.vocab_title), it, dense = true, icon = R.drawable.ic_dictionary) }
+        if (!compact) {
+            NotesTitleBar(onHistory = onHistory, onDictionary = onDictionary, onSettings = onSettings, onFloat = onFloat)
+        }
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+            LazyVerticalGrid(
+                columns = if (compact) GridCells.Fixed(1) else GridCells.Adaptive(Dimens.NoteCardWidth),
+                state = gridState,
+                modifier = Modifier.fillMaxSize(),
+                // Full app: room under the last note for the New note button.
+                contentPadding = PaddingValues(top = gap, bottom = if (compact) gap else gap + Dimens.FabClearance),
+                horizontalArrangement = Arrangement.spacedBy(gap),
+                verticalArrangement = Arrangement.spacedBy(gap),
+            ) {
+                item(key = "header", span = { GridItemSpan(maxLineSpan) }, contentType = "header") {
+                    Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                        if (compact) {
+                            Row(
+                                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceXs),
+                            ) {
+                                PillButton(stringResource(R.string.new_note), onCreate, selected = true, dense = true, icon = R.drawable.ic_add)
+                                onHistory?.let { PillButton(stringResource(R.string.history_title), it, dense = true, icon = R.drawable.ic_history) }
+                                onDictionary?.let { PillButton(stringResource(R.string.vocab_title), it, dense = true, icon = R.drawable.ic_dictionary) }
+                            }
                         }
-                    } else {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(top = Dimens.SpaceS),
-                            horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceS),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                stringResource(R.string.notes_title),
-                                style = MaterialTheme.typography.headlineLarge,
-                                modifier = Modifier.weight(1f).semantics { heading() },
-                            )
-                            PillButton(stringResource(R.string.new_note), onCreate, selected = true, icon = R.drawable.ic_add)
-                        }
-                    }
-                    if (onQueryChange != null) SearchField(query, onQueryChange, compact)
-                    if (onCategoryFilter != null) {
-                        CategoryChips(
-                            selected = categoryFilter,
-                            onSelect = onCategoryFilter,
-                            noneLabel = stringResource(R.string.category_all),
-                            dense = compact,
-                        )
-                    }
-                }
-            }
-            if (notes != null && notes.isEmpty()) {
-                item(key = "empty", span = { GridItemSpan(maxLineSpan) }, contentType = "empty") {
-                    val colors = MaterialTheme.colorScheme
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(Dimens.CornerL))
-                            .background(colors.surfaceContainerLow)
-                            .padding(if (compact) Dimens.SpaceM else Dimens.SpaceXl),
-                        verticalArrangement = Arrangement.spacedBy(Dimens.SpaceS),
-                    ) {
-                        Text(
-                            when {
-                                query.isNotBlank() -> stringResource(R.string.search_none)
-                                categoryFilter != null ->
-                                    stringResource(R.string.no_notes_in_category, stringResource(categoryFilter.labelRes))
-                                else -> stringResource(R.string.no_notes)
-                            },
-                            style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
-                        )
-                        if (!compact && query.isBlank() && categoryFilter == null) {
-                            Text(
-                                stringResource(R.string.no_notes_help),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = colors.onSurfaceVariant,
+                        if (onQueryChange != null) SearchField(query, onQueryChange, compact)
+                        if (onCategoryFilter != null) {
+                            CategoryChips(
+                                selected = categoryFilter,
+                                onSelect = onCategoryFilter,
+                                noneLabel = stringResource(R.string.category_all),
+                                dense = compact,
                             )
                         }
                     }
                 }
-            }
-            items(notes.orEmpty(), key = { it.id }, contentType = { "note" }) { summary ->
-                val showActions = actionsFor == summary.id
-                NoteCard(
-                    summary = summary,
-                    compact = compact,
-                    showCategory = summary.category != categoryFilter,
-                    showActions = showActions,
-                    onOpen = { onOpen(summary.id) },
-                    onActions = { actionsFor = if (showActions) null else summary.id },
-                    onPin = onPin?.let { pin ->
-                        {
-                            pin(summary.id, !summary.pinned)
+                if (notes != null && notes.isEmpty()) {
+                    item(key = "empty", span = { GridItemSpan(maxLineSpan) }, contentType = "empty") {
+                        val colors = MaterialTheme.colorScheme
+                        Column(
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(Dimens.CornerL))
+                                .background(colors.surfaceContainerLow)
+                                .padding(if (compact) Dimens.SpaceM else Dimens.SpaceXl),
+                            verticalArrangement = Arrangement.spacedBy(Dimens.SpaceS),
+                        ) {
+                            Text(
+                                when {
+                                    query.isNotBlank() -> stringResource(R.string.search_none)
+                                    categoryFilter != null ->
+                                        stringResource(R.string.no_notes_in_category, stringResource(categoryFilter.labelRes))
+                                    else -> stringResource(R.string.no_notes)
+                                },
+                                style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
+                            )
+                            if (!compact && query.isBlank() && categoryFilter == null) {
+                                Text(
+                                    stringResource(R.string.no_notes_help),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = colors.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+                items(notes.orEmpty(), key = { it.id }, contentType = { "note" }) { summary ->
+                    val showActions = actionsFor == summary.id
+                    NoteCard(
+                        summary = summary,
+                        compact = compact,
+                        showCategory = summary.category != categoryFilter,
+                        showActions = showActions,
+                        onOpen = { onOpen(summary.id) },
+                        onActions = { actionsFor = if (showActions) null else summary.id },
+                        onPin = onPin?.let { pin ->
+                            {
+                                pin(summary.id, !summary.pinned)
+                                actionsFor = null
+                            }
+                        },
+                        onDelete = {
+                            onDelete(summary.id)
                             actionsFor = null
-                        }
-                    },
-                    onDelete = {
-                        onDelete(summary.id)
-                        actionsFor = null
-                    },
-                    modifier = Modifier.animateItem(
-                        fadeInSpec = Motion.fade(),
-                        fadeOutSpec = Motion.fade(),
-                    ),
+                        },
+                        modifier = Modifier.animateItem(
+                            fadeInSpec = Motion.fade(),
+                            fadeOutSpec = Motion.fade(),
+                        ),
+                    )
+                }
+            }
+            if (!compact) {
+                ExtendedFloatingActionButton(
+                    text = { Text(stringResource(R.string.new_note)) },
+                    icon = { Icon(painterResource(R.drawable.ic_add), contentDescription = null) },
+                    onClick = onCreate,
+                    expanded = fabExpanded,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = Dimens.SpaceM),
                 )
             }
         }
@@ -213,18 +225,35 @@ fun NoteListContent(
                 onDeletedDismissed()
             }
         }
-        if (!compact && (onHistory != null || onDictionary != null || onSettings != null || onFloat != null)) {
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceXs, Alignment.CenterHorizontally),
-            ) {
-                onHistory?.let { TextButton(onClick = it) { Text(stringResource(R.string.history_title)) } }
-                onDictionary?.let { TextButton(onClick = it) { Text(stringResource(R.string.vocab_title)) } }
-                onSettings?.let { TextButton(onClick = it) { Text(stringResource(R.string.settings)) } }
-                onFloat?.let { TextButton(onClick = it) { Text(stringResource(R.string.float_button)) } }
-            }
-        }
+    }
+}
+
+/**
+ * The full app's notes bar, pinned above the list: the title, History, Dictionary and Settings
+ * as icon buttons, and Float, the app's own action, as a labelled button.
+ */
+@Composable
+private fun NotesTitleBar(
+    onHistory: (() -> Unit)?,
+    onDictionary: (() -> Unit)?,
+    onSettings: (() -> Unit)?,
+    onFloat: (() -> Unit)?,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = Dimens.SpaceS),
+        horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceXs),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            stringResource(R.string.notes_title),
+            style = MaterialTheme.typography.headlineLarge,
+            maxLines = 1,
+            modifier = Modifier.weight(1f).semantics { heading() },
+        )
+        onHistory?.let { CircleButton(R.drawable.ic_history, stringResource(R.string.history_title), it) }
+        onDictionary?.let { CircleButton(R.drawable.ic_dictionary, stringResource(R.string.vocab_title), it) }
+        onSettings?.let { CircleButton(R.drawable.ic_settings, stringResource(R.string.settings), it) }
+        onFloat?.let { PillButton(stringResource(R.string.float_button), it, selected = true, icon = R.drawable.ic_float_window) }
     }
 }
 

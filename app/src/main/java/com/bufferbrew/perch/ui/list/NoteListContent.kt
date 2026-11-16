@@ -1,5 +1,6 @@
 package com.bufferbrew.perch.ui.list
 
+import androidx.compose.foundation.layout.BoxWithConstraints
 import com.bufferbrew.perch.ui.theme.LocalDenseTouchTarget
 import androidx.compose.ui.semantics.selected
 import androidx.compose.runtime.derivedStateOf
@@ -243,21 +244,32 @@ private fun NotesTitleBar(
     onSettings: (() -> Unit)?,
     onFloat: (() -> Unit)?,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(top = Dimens.SpaceS),
-        horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceXs),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            stringResource(R.string.notes_title),
-            style = MaterialTheme.typography.headlineLarge,
-            maxLines = 1,
-            modifier = Modifier.weight(1f).semantics { heading() },
-        )
-        onHistory?.let { CircleButton(R.drawable.ic_history, stringResource(R.string.history_title), it) }
-        onDictionary?.let { CircleButton(R.drawable.ic_dictionary, stringResource(R.string.vocab_title), it) }
-        onSettings?.let { CircleButton(R.drawable.ic_settings, stringResource(R.string.settings), it) }
-        onFloat?.let { PillButton(stringResource(R.string.float_button), it, selected = true, icon = R.drawable.ic_float_window) }
+    // Measures its own slot: the list beside an open note (two panes) is too narrow for the
+    // title, three icons and a labelled Float, so Float drops to its icon there.
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val roomy = maxWidth >= Dimens.TitleBarRoomy
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = Dimens.SpaceS),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceXs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(R.string.notes_title),
+                style = MaterialTheme.typography.headlineLarge,
+                maxLines = 1,
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            onHistory?.let { CircleButton(R.drawable.ic_history, stringResource(R.string.history_title), it) }
+            onDictionary?.let { CircleButton(R.drawable.ic_dictionary, stringResource(R.string.vocab_title), it) }
+            onSettings?.let { CircleButton(R.drawable.ic_settings, stringResource(R.string.settings), it) }
+            onFloat?.let {
+                if (roomy) {
+                    PillButton(stringResource(R.string.float_button), it, selected = true, icon = R.drawable.ic_float_window)
+                } else {
+                    CircleButton(R.drawable.ic_float_window, stringResource(R.string.float_button), it)
+                }
+            }
+        }
     }
 }
 

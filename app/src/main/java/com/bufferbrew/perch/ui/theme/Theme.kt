@@ -235,6 +235,8 @@ object Dimens {
     val ReadingWidth = 720.dp
     /** The notes list beside an open note on expanded widths. */
     val ListPaneWidth = 360.dp
+    /** Below this the notes title bar shows Float as an icon (phones have about 380 dp). */
+    val TitleBarRoomy = 360.dp
     /** How far a screen slides as it comes in or goes out. Opacity does most of the work. */
     val ScreenSlide = 32.dp
     /** How far a pressed bubble or pill dips. */

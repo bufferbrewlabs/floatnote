@@ -229,6 +229,8 @@ object Dimens {
     /** Icons inside buttons and chips; [IconSmall] in the dense (floating) style. */
     val IconInline = 18.dp
     val IconSmall = 16.dp
+    /** A hint beside text, such as the note switcher's chevron. */
+    val IconTiny = 12.dp
     val NoteCardWidth = 220.dp
     val ReadingWidth = 720.dp
     /** The notes list beside an open note on expanded widths. */

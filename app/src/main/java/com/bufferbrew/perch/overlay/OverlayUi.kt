@@ -646,7 +646,9 @@ private fun PanelHeader(
                     contentDescription = moveLabel
                     if (onTitleTap != null) onClick(switchLabel) { onTitleTap(); true }
                 }
-                .padding(horizontal = Dimens.SpaceXs),
+                // No start padding: the back button's touch area already leaves a margin, and the
+                // title needs every dp in a Small panel.
+                .padding(end = Dimens.SpaceXs),
             contentAlignment = Alignment.CenterStart,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -662,7 +664,7 @@ private fun PanelHeader(
                         painterResource(if (switcherOpen) R.drawable.ic_expand_less else R.drawable.ic_expand_more),
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(Dimens.IconSmall),
+                        modifier = Modifier.size(Dimens.IconTiny),
                     )
                 }
             }

@@ -1,8 +1,13 @@
 package com.bufferbrew.perch.ui.settings
 
+import com.bufferbrew.perch.ui.theme.supportsDynamicColor
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.res.painterResource
+import androidx.compose.material3.Icon
+import com.bufferbrew.perch.ui.components.BackButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -32,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -108,12 +112,10 @@ fun SettingsContent(
                 .padding(bottom = Dimens.SpaceM),
             verticalArrangement = Arrangement.spacedBy(Dimens.SpaceM),
         ) {
-            TextButton(onClick = { if (current == null) onBack() else page = null }) {
-                Text(
-                    stringResource(if (current == null) R.string.back_to_notes else R.string.back_to_settings),
-                    color = colors.onSurfaceVariant,
-                )
-            }
+            BackButton(
+                stringResource(if (current == null) R.string.back_to_notes else R.string.back_to_settings),
+                onClick = { if (current == null) onBack() else page = null },
+            )
             when (current) {
                 null -> SettingsMenu(onOpen = { page = it })
                 SettingsPage.Voice -> VoicePage(settings, recordings, micGranted, onRequestMic)
@@ -146,7 +148,7 @@ private fun SettingsMenu(onOpen: (SettingsPage) -> Unit) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(Dimens.CornerL))
+                    .clip(MaterialTheme.shapes.extraLarge)
                     .background(MaterialTheme.colorScheme.surfaceContainerLow)
                     .clickable { onOpen(target) }
                     .padding(Dimens.SpaceM),
@@ -160,7 +162,11 @@ private fun SettingsMenu(onOpen: (SettingsPage) -> Unit) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                Text("›", style = MaterialTheme.typography.titleMedium, modifier = Modifier.clearAndSetSemantics {})
+                Icon(
+                    painterResource(R.drawable.ic_chevron_right),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
@@ -412,9 +418,9 @@ private fun ConnectionTest(settings: VoiceSettings, check: ConnectionCheck) {
             ) {
                 results.forEach { line ->
                     val (mark, status) = when (line.ok) {
-                        true -> "✓" to stringResource(R.string.check_passed)
-                        false -> "✕" to stringResource(R.string.check_failed)
-                        null -> "–" to stringResource(R.string.check_unknown)
+                        true -> R.drawable.ic_check to stringResource(R.string.check_passed)
+                        false -> R.drawable.ic_close to stringResource(R.string.check_failed)
+                        null -> null to stringResource(R.string.check_unknown)
                     }
                     Row(
                         verticalAlignment = Alignment.Top,
@@ -422,12 +428,16 @@ private fun ConnectionTest(settings: VoiceSettings, check: ConnectionCheck) {
                             contentDescription = "${line.label}: $status. ${line.detail}"
                         },
                     ) {
-                        Text(
-                            mark,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = if (line.ok == false) colors.error else colors.onSurface,
-                            modifier = Modifier.padding(end = Dimens.SpaceS),
-                        )
+                        // Not checked yet: an empty slot the icon's size, so the rows stay aligned.
+                        Box(Modifier.padding(end = Dimens.SpaceS).size(Dimens.Icon)) {
+                            if (mark != null) {
+                                Icon(
+                                    painterResource(mark),
+                                    contentDescription = null,
+                                    tint = if (line.ok == false) colors.error else colors.primary,
+                                )
+                            }
+                        }
                         Column(Modifier.weight(1f)) {
                             Text(line.label, style = MaterialTheme.typography.bodyMedium)
                             Text(
@@ -552,13 +562,15 @@ private fun AppearancePage(palette: AppPalette, onPaletteChange: (AppPalette) ->
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Column(verticalArrangement = Arrangement.spacedBy(Dimens.SpaceS)) {
-        AppPalette.entries.forEach { option ->
+        // System colours only where the phone has them (Android 12+).
+        AppPalette.entries.filter { it != AppPalette.System || supportsDynamicColor() }.forEach { option ->
             PillButton(
                 text = stringResource(
                     when (option) {
                         AppPalette.Indigo -> R.string.palette_indigo
                         AppPalette.Classic -> R.string.palette_classic
                         AppPalette.Mono -> R.string.palette_mono
+                        AppPalette.System -> R.string.palette_system
                     },
                 ),
                 onClick = { onPaletteChange(option) },

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -162,7 +161,7 @@ fun VoiceStatus(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(Dimens.CornerM))
+            .clip(MaterialTheme.shapes.medium)
             .background(colors.surfaceVariant)
             .padding(horizontal = Dimens.SpaceM, vertical = Dimens.SpaceS),
     ) {
@@ -181,7 +180,7 @@ fun VoiceStatus(
                     color = colors.onSurfaceVariant,
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircleButton("✕", stringResource(R.string.voice_discard), actions::onCancel, dense = compact)
+                    CircleButton(R.drawable.ic_close, stringResource(R.string.voice_discard), actions::onCancel, dense = compact)
                     Waveform(
                         levelAt = { index -> (voiceState() as? VoiceState.Recording)?.levels.sampleAt(index) },
                         color = colors.primary,
@@ -190,13 +189,13 @@ fun VoiceStatus(
                     )
                     if (current.canPause) {
                         CircleButton(
-                            if (current.paused) "▶" else "❚❚",
+                            if (current.paused) R.drawable.ic_play else R.drawable.ic_pause,
                             stringResource(if (current.paused) R.string.voice_resume else R.string.voice_pause),
                             actions::onPauseToggle,
                             dense = compact,
                         )
                     }
-                    CircleButton("✓", stringResource(R.string.voice_done), actions::onMicToggle, dense = compact)
+                    CircleButton(R.drawable.ic_check, stringResource(R.string.voice_done), actions::onMicToggle, dense = compact)
                 }
                 if (current.partial.isNotBlank()) {
                     Text(

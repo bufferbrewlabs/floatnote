@@ -1,5 +1,13 @@
 package com.bufferbrew.perch.overlay
 
+import com.bufferbrew.perch.ui.theme.LocalDenseTouchTarget
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.res.painterResource
+import androidx.compose.material3.Icon
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
@@ -29,7 +37,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -86,6 +93,9 @@ import com.bufferbrew.perch.voice.Waveform
 import com.bufferbrew.perch.voice.sampleAt
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+
+/** The idle record pill shows the record icon; "…" and "!" stay as text status marks. */
+private const val RECORD_MARK = "record"
 
 /** Resting shape of the bubble's waveform, as fractions of full height. */
 private val RestingLevels = listOf(0.12f, 0.35f, 0.75f, 0.35f, 0.12f)
@@ -200,16 +210,16 @@ private fun RowScope.RecordingBar(
     onDone: () -> Unit,
     wave: @Composable () -> Unit,
 ) {
-    RecordPillButton("✕", stringResource(R.string.voice_discard), onCancel)
+    RecordPillButton(R.drawable.ic_close, stringResource(R.string.voice_discard), onCancel)
     if (controls.canPause) {
         RecordPillButton(
-            if (controls.paused) "▶" else "❚❚",
+            if (controls.paused) R.drawable.ic_play else R.drawable.ic_pause,
             stringResource(if (controls.paused) R.string.voice_resume else R.string.voice_pause),
             onPauseToggle,
         )
     }
     Box(drag.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) { wave() }
-    RecordPillButton("✓", stringResource(R.string.voice_done), onDone)
+    RecordPillButton(R.drawable.ic_check, stringResource(R.string.voice_done), onDone)
 }
 
 private enum class BubbleTap { Record, Stop, Retry, Busy }
@@ -222,13 +232,20 @@ private fun BubbleIndicator(voiceState: () -> VoiceState, recording: Boolean, pi
             when (voiceState()) {
                 VoiceState.Transcribing -> "…"
                 is VoiceState.Error -> "!"
-                VoiceState.Idle -> if (pill) "●" else null
+                VoiceState.Idle -> if (pill) RECORD_MARK else null
                 is VoiceState.Recording -> null
             }
         }
     }
     val glyph = symbol
-    if (glyph != null) {
+    if (glyph == RECORD_MARK) {
+        Icon(
+            painterResource(R.drawable.ic_record),
+            contentDescription = null,
+            tint = BubbleColors.Content,
+            modifier = Modifier.size(Dimens.IconInline),
+        )
+    } else if (glyph != null) {
         Text(
             glyph,
             style = MaterialTheme.typography.titleMedium,
@@ -331,7 +348,7 @@ fun OverlayRecordPill(
 
 /** A small round button on the dark pill. */
 @Composable
-private fun RecordPillButton(glyph: String, label: String, onClick: () -> Unit) {
+private fun RecordPillButton(@DrawableRes icon: Int, label: String, onClick: () -> Unit) {
     Box(Modifier.size(Dimens.CompactTouchTarget), contentAlignment = Alignment.Center) {
         Surface(
             onClick = onClick,
@@ -346,7 +363,7 @@ private fun RecordPillButton(glyph: String, label: String, onClick: () -> Unit) 
                 },
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text(glyph, style = MaterialTheme.typography.labelLarge, modifier = Modifier.clearAndSetSemantics {})
+                Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(Dimens.IconSmall))
             }
         }
     }
@@ -367,6 +384,8 @@ fun OverlayPanel(
     voiceState: () -> VoiceState,
     voiceActions: VoiceActions,
     panelSize: PanelSize?,
+    /** Medium-sized or larger: controls get full 48 dp touch areas. */
+    roomy: Boolean,
     onPanelSize: (PanelSize) -> Unit,
     opacity: Float,
     /** What the panel draws at now: [opacity], or fully visible while it's in use. */
@@ -398,22 +417,41 @@ fun OverlayPanel(
             showDictionary = false
         }
     }
-    val shape = RoundedCornerShape(Dimens.CornerL)
+    val shape = MaterialTheme.shapes.extraLarge
 
-    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dimens.CompactTouchTarget) {
+    val paperColor = MaterialTheme.colorScheme.surface.copy(alpha = if (focusedNote) FocusedNoteBackgroundAlpha else 1f)
+    val edgeColor = MaterialTheme.colorScheme.outlineVariant
+    // Touch areas: 36 dp in a small panel, the full 48 dp once it is Medium or larger. Controls
+    // keep their dense look either way; only the area that takes the tap grows.
+    val touchTarget = if (roomy) Dimens.TouchTarget else Dimens.CompactTouchTarget
+    CompositionLocalProvider(
+        LocalMinimumInteractiveComponentSize provides touchTarget,
+        LocalDenseTouchTarget provides touchTarget,
+    ) {
         Surface(
+            // Two-stage fade (PanelOpacity): the paper and its edge take your opacity, drawn
+            // here; the content keeps its own, so text stays readable until the slider's
+            // midpoint. Both read the opacity in draw/layer lambdas, so fading never recomposes.
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer { alpha = shownOpacity() }
-                .border(Dimens.Hairline, MaterialTheme.colorScheme.outlineVariant, shape),
+                .drawBehind {
+                    val paper = PanelOpacity.paper(shownOpacity())
+                    val outline = shape.createOutline(size, layoutDirection, this)
+                    drawOutline(outline, paperColor.copy(alpha = paperColor.alpha * paper))
+                    drawOutline(
+                        outline,
+                        edgeColor.copy(alpha = edgeColor.alpha * paper),
+                        style = Stroke(Dimens.Hairline.toPx()),
+                    )
+                },
             shape = shape,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = if (focusedNote) FocusedNoteBackgroundAlpha else 1f),
+            color = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onSurface,
             // No shadow: the window is exactly the panel's size, so a shadow is cut off at its
             // edges, and it shows through the see-through background as a grey haze. The
             // hairline border separates the panel from the app underneath instead.
         ) {
-            Box(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize().graphicsLayer { alpha = PanelOpacity.content(shownOpacity()) }) {
                 // Header buttons sit SpaceXs from the edge; text and the body get the same
                 // SpaceS on both sides. Reserve the resize handle's entire touch area.
                 Column(
@@ -596,19 +634,21 @@ private fun PanelHeader(
     val switchLabel = stringResource(R.string.switch_note)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         if (onBack != null) {
-            CircleButton("‹", stringResource(R.string.back_to_notes), onBack, dense = true)
+            CircleButton(R.drawable.ic_back, stringResource(R.string.back_to_notes), onBack, dense = true)
         }
         // The title drags the window; the buttons beside it still take taps.
         Box(
             modifier = Modifier
                 .weight(1f)
-                .heightIn(min = Dimens.CompactTouchTarget)
+                .heightIn(min = LocalDenseTouchTarget.current)
                 .windowDrag(onDragStart = onMoveStart, onDrag = onMove, onDragEnd = onMoveEnd, onTap = onTitleTap)
                 .semantics {
                     contentDescription = moveLabel
                     if (onTitleTap != null) onClick(switchLabel) { onTitleTap(); true }
                 }
-                .padding(horizontal = Dimens.SpaceXs),
+                // No start padding: the back button's touch area already leaves a margin, and the
+                // title needs every dp in a Small panel.
+                .padding(end = Dimens.SpaceXs),
             contentAlignment = Alignment.CenterStart,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -620,18 +660,18 @@ private fun PanelHeader(
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 if (onTitleTap != null) {
-                    Text(
-                        if (switcherOpen) " ▴" else " ▾",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.clearAndSetSemantics {},
+                    Icon(
+                        painterResource(if (switcherOpen) R.drawable.ic_expand_less else R.drawable.ic_expand_more),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(Dimens.IconTiny),
                     )
                 }
             }
         }
         OpacityButton(opacity, onToggleAdjust, onOpacityDrag, onOpacityDragEnd)
-        CircleButton("–", stringResource(R.string.minimise), onMinimise, dense = true)
-        CircleButton("✕", stringResource(R.string.close_floating), onClose, dense = true)
+        CircleButton(R.drawable.ic_minimise, stringResource(R.string.minimise), onMinimise, dense = true)
+        CircleButton(R.drawable.ic_close, stringResource(R.string.close_floating), onClose, dense = true)
     }
 }
 
@@ -676,7 +716,7 @@ private fun OpacityButton(
                 }
             },
     ) {
-        CircleButton("◐", stringResource(R.string.adjust_window), onTap, dense = true)
+        CircleButton(R.drawable.ic_contrast, stringResource(R.string.adjust_window), onTap, dense = true)
     }
 }
 

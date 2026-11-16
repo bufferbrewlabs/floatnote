@@ -1,10 +1,19 @@
 package com.bufferbrew.perch.ui.list
 
+import androidx.compose.foundation.layout.BoxWithConstraints
+import com.bufferbrew.perch.ui.theme.LocalDenseTouchTarget
+import androidx.compose.ui.semantics.selected
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.res.painterResource
+import androidx.compose.material3.Icon
 import android.text.format.DateUtils
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,7 +23,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,8 +34,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -42,8 +48,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -86,106 +90,118 @@ fun NoteListContent(
     onCategoryFilter: ((NoteCategory?) -> Unit)? = null,
     onSettings: (() -> Unit)? = null,
     onFloat: (() -> Unit)? = null,
+    /** The note open beside the list (two panes), highlighted. */
+    selectedId: String? = null,
 ) {
     var actionsFor by rememberSaveable { mutableStateOf<String?>(null) }
     val gap = if (compact) Dimens.SpaceXs else Dimens.SpaceM
+    val gridState = rememberLazyGridState()
+    // The New note button shows its label at the top of the list and shrinks to its icon once
+    // you scroll, so it covers less of the notes.
+    val fabExpanded by remember { derivedStateOf { gridState.firstVisibleItemIndex == 0 } }
     Column(modifier) {
-        LazyVerticalGrid(
-            columns = if (compact) GridCells.Fixed(1) else GridCells.Adaptive(Dimens.NoteCardWidth),
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = PaddingValues(top = gap, bottom = gap),
-            horizontalArrangement = Arrangement.spacedBy(gap),
-            verticalArrangement = Arrangement.spacedBy(gap),
-        ) {
-            item(key = "header", span = { GridItemSpan(maxLineSpan) }, contentType = "header") {
-                Column(verticalArrangement = Arrangement.spacedBy(gap)) {
-                    if (compact) {
-                        Row(
-                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceXs),
-                        ) {
-                            PillButton(stringResource(R.string.new_note), onCreate, selected = true, dense = true)
-                            onHistory?.let { PillButton(stringResource(R.string.history_title), it, dense = true) }
-                            onDictionary?.let { PillButton(stringResource(R.string.vocab_title), it, dense = true) }
+        if (!compact) {
+            NotesTitleBar(onHistory = onHistory, onDictionary = onDictionary, onSettings = onSettings, onFloat = onFloat)
+        }
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+            LazyVerticalGrid(
+                columns = if (compact) GridCells.Fixed(1) else GridCells.Adaptive(Dimens.NoteCardWidth),
+                state = gridState,
+                modifier = Modifier.fillMaxSize(),
+                // Full app: room under the last note for the New note button.
+                contentPadding = PaddingValues(top = gap, bottom = if (compact) gap else gap + Dimens.FabClearance),
+                horizontalArrangement = Arrangement.spacedBy(gap),
+                verticalArrangement = Arrangement.spacedBy(gap),
+            ) {
+                item(key = "header", span = { GridItemSpan(maxLineSpan) }, contentType = "header") {
+                    Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                        if (compact) {
+                            Row(
+                                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceXs),
+                            ) {
+                                PillButton(stringResource(R.string.new_note), onCreate, selected = true, dense = true, icon = R.drawable.ic_add)
+                                onHistory?.let { PillButton(stringResource(R.string.history_title), it, dense = true, icon = R.drawable.ic_history) }
+                                onDictionary?.let { PillButton(stringResource(R.string.vocab_title), it, dense = true, icon = R.drawable.ic_dictionary) }
+                            }
                         }
-                    } else {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(top = Dimens.SpaceS),
-                            horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceS),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                stringResource(R.string.notes_title),
-                                style = MaterialTheme.typography.headlineLarge,
-                                modifier = Modifier.weight(1f).semantics { heading() },
-                            )
-                            PillButton(stringResource(R.string.new_note), onCreate, selected = true)
-                        }
-                    }
-                    if (onQueryChange != null) SearchField(query, onQueryChange, compact)
-                    if (onCategoryFilter != null) {
-                        CategoryChips(
-                            selected = categoryFilter,
-                            onSelect = onCategoryFilter,
-                            noneLabel = stringResource(R.string.category_all),
-                            dense = compact,
-                        )
-                    }
-                }
-            }
-            if (notes != null && notes.isEmpty()) {
-                item(key = "empty", span = { GridItemSpan(maxLineSpan) }, contentType = "empty") {
-                    val colors = MaterialTheme.colorScheme
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(Dimens.CornerL))
-                            .background(colors.surfaceContainerLow)
-                            .padding(if (compact) Dimens.SpaceM else Dimens.SpaceXl),
-                        verticalArrangement = Arrangement.spacedBy(Dimens.SpaceS),
-                    ) {
-                        Text(
-                            when {
-                                query.isNotBlank() -> stringResource(R.string.search_none)
-                                categoryFilter != null ->
-                                    stringResource(R.string.no_notes_in_category, stringResource(categoryFilter.labelRes))
-                                else -> stringResource(R.string.no_notes)
-                            },
-                            style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
-                        )
-                        if (!compact && query.isBlank() && categoryFilter == null) {
-                            Text(
-                                stringResource(R.string.no_notes_help),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = colors.onSurfaceVariant,
+                        if (onQueryChange != null) SearchField(query, onQueryChange, compact)
+                        if (onCategoryFilter != null) {
+                            CategoryChips(
+                                selected = categoryFilter,
+                                onSelect = onCategoryFilter,
+                                noneLabel = stringResource(R.string.category_all),
+                                dense = compact,
                             )
                         }
                     }
                 }
-            }
-            items(notes.orEmpty(), key = { it.id }, contentType = { "note" }) { summary ->
-                val showActions = actionsFor == summary.id
-                NoteCard(
-                    summary = summary,
-                    compact = compact,
-                    showCategory = summary.category != categoryFilter,
-                    showActions = showActions,
-                    onOpen = { onOpen(summary.id) },
-                    onActions = { actionsFor = if (showActions) null else summary.id },
-                    onPin = onPin?.let { pin ->
-                        {
-                            pin(summary.id, !summary.pinned)
+                if (notes != null && notes.isEmpty()) {
+                    item(key = "empty", span = { GridItemSpan(maxLineSpan) }, contentType = "empty") {
+                        val colors = MaterialTheme.colorScheme
+                        Column(
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(MaterialTheme.shapes.extraLarge)
+                                .background(colors.surfaceContainerLow)
+                                .padding(if (compact) Dimens.SpaceM else Dimens.SpaceXl),
+                            verticalArrangement = Arrangement.spacedBy(Dimens.SpaceS),
+                        ) {
+                            Text(
+                                when {
+                                    query.isNotBlank() -> stringResource(R.string.search_none)
+                                    categoryFilter != null ->
+                                        stringResource(R.string.no_notes_in_category, stringResource(categoryFilter.labelRes))
+                                    else -> stringResource(R.string.no_notes)
+                                },
+                                style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge,
+                            )
+                            if (!compact && query.isBlank() && categoryFilter == null) {
+                                Text(
+                                    stringResource(R.string.no_notes_help),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = colors.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+                items(notes.orEmpty(), key = { it.id }, contentType = { "note" }) { summary ->
+                    val showActions = actionsFor == summary.id
+                    NoteCard(
+                        summary = summary,
+                        compact = compact,
+                        showCategory = summary.category != categoryFilter,
+                    selected = summary.id == selectedId,
+                        showActions = showActions,
+                        onOpen = { onOpen(summary.id) },
+                        onActions = { actionsFor = if (showActions) null else summary.id },
+                        onPin = onPin?.let { pin ->
+                            {
+                                pin(summary.id, !summary.pinned)
+                                actionsFor = null
+                            }
+                        },
+                        onDelete = {
+                            onDelete(summary.id)
                             actionsFor = null
-                        }
-                    },
-                    onDelete = {
-                        onDelete(summary.id)
-                        actionsFor = null
-                    },
-                    modifier = Modifier.animateItem(
-                        fadeInSpec = Motion.fade(),
-                        fadeOutSpec = Motion.fade(),
-                    ),
+                        },
+                        modifier = Modifier.animateItem(
+                            fadeInSpec = Motion.fade(),
+                            fadeOutSpec = Motion.fade(),
+                        ),
+                    )
+                }
+            }
+            if (!compact) {
+                ExtendedFloatingActionButton(
+                    text = { Text(stringResource(R.string.new_note)) },
+                    icon = { Icon(painterResource(R.drawable.ic_add), contentDescription = null) },
+                    onClick = onCreate,
+                    expanded = fabExpanded,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = Dimens.SpaceM),
                 )
             }
         }
@@ -194,7 +210,7 @@ fun NoteListContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = Dimens.SpaceXs)
-                    .clip(RoundedCornerShape(Dimens.CornerM))
+                    .clip(MaterialTheme.shapes.medium)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(start = Dimens.SpaceM)
                     .semantics { liveRegion = LiveRegionMode.Polite },
@@ -214,16 +230,44 @@ fun NoteListContent(
                 onDeletedDismissed()
             }
         }
-        if (!compact && (onHistory != null || onDictionary != null || onSettings != null || onFloat != null)) {
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceXs, Alignment.CenterHorizontally),
-            ) {
-                onHistory?.let { TextButton(onClick = it) { Text(stringResource(R.string.history_title)) } }
-                onDictionary?.let { TextButton(onClick = it) { Text(stringResource(R.string.vocab_title)) } }
-                onSettings?.let { TextButton(onClick = it) { Text(stringResource(R.string.settings)) } }
-                onFloat?.let { TextButton(onClick = it) { Text(stringResource(R.string.float_button)) } }
+    }
+}
+
+/**
+ * The full app's notes bar, pinned above the list: the title, History, Dictionary and Settings
+ * as icon buttons, and Float, the app's own action, as a labelled button.
+ */
+@Composable
+private fun NotesTitleBar(
+    onHistory: (() -> Unit)?,
+    onDictionary: (() -> Unit)?,
+    onSettings: (() -> Unit)?,
+    onFloat: (() -> Unit)?,
+) {
+    // Measures its own slot: the list beside an open note (two panes) is too narrow for the
+    // title, three icons and a labelled Float, so Float drops to its icon there.
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val roomy = maxWidth >= Dimens.TitleBarRoomy
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = Dimens.SpaceS),
+            horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceXs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(R.string.notes_title),
+                style = MaterialTheme.typography.headlineLarge,
+                maxLines = 1,
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            onHistory?.let { CircleButton(R.drawable.ic_history, stringResource(R.string.history_title), it) }
+            onDictionary?.let { CircleButton(R.drawable.ic_dictionary, stringResource(R.string.vocab_title), it) }
+            onSettings?.let { CircleButton(R.drawable.ic_settings, stringResource(R.string.settings), it) }
+            onFloat?.let {
+                if (roomy) {
+                    PillButton(stringResource(R.string.float_button), it, selected = true, icon = R.drawable.ic_float_window)
+                } else {
+                    CircleButton(R.drawable.ic_float_window, stringResource(R.string.float_button), it)
+                }
             }
         }
     }
@@ -235,6 +279,7 @@ private fun NoteCard(
     compact: Boolean,
     showCategory: Boolean,
     showActions: Boolean,
+    selected: Boolean,
     onOpen: () -> Unit,
     onActions: () -> Unit,
     onPin: (() -> Unit)?,
@@ -243,7 +288,7 @@ private fun NoteCard(
 ) {
     val colors = MaterialTheme.colorScheme
     val typography = MaterialTheme.typography
-    val shape = RoundedCornerShape(if (compact) Dimens.CornerM else Dimens.CornerL)
+    val shape = if (compact) MaterialTheme.shapes.medium else MaterialTheme.shapes.extraLarge
     val actionsLabel = stringResource(R.string.note_actions)
     val interactionSource = remember { MutableInteractionSource() }
     val focused by interactionSource.collectIsFocusedAsState()
@@ -259,7 +304,14 @@ private fun NoteCard(
     Column(
         modifier.fillMaxWidth()
             .clip(shape)
-            .background(if (summary.pinned) colors.primaryContainer else colors.surfaceContainerLow)
+            .background(
+                when {
+                    selected -> colors.secondaryContainer
+                    summary.pinned -> colors.primaryContainer
+                    else -> colors.surfaceContainerLow
+                },
+            )
+            .semantics { this.selected = selected }
             .border(
                 if (focused) Dimens.FocusRing else Dimens.Hairline,
                 if (focused) colors.primary else colors.outlineVariant,
@@ -269,7 +321,7 @@ private fun NoteCard(
         Row(verticalAlignment = Alignment.Top) {
             Column(
                 Modifier.weight(1f)
-                    .heightIn(min = if (compact) Dimens.CompactTouchTarget else Dimens.TouchTarget)
+                    .heightIn(min = if (compact) LocalDenseTouchTarget.current else Dimens.TouchTarget)
                     .combinedClickable(
                         interactionSource = interactionSource,
                         indication = LocalIndication.current,
@@ -303,7 +355,7 @@ private fun NoteCard(
                 )
             }
             CircleButton(
-                "⋯", actionsLabel, onActions,
+                R.drawable.ic_more, actionsLabel, onActions,
                 modifier = Modifier.padding(top = Dimens.SpaceXs, end = Dimens.SpaceXs),
                 dense = compact,
             )
@@ -333,17 +385,13 @@ private fun SearchField(query: String, onChange: (String) -> Unit, compact: Bool
         onValueChange = onChange,
         label = { Text(stringResource(R.string.search_hint)) },
         singleLine = true,
-        shape = RoundedCornerShape(Dimens.CornerL),
+        shape = MaterialTheme.shapes.extraLarge,
         textStyle = if (compact) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge,
         leadingIcon = {
-            Canvas(Modifier.size(Dimens.Icon)) {
-                val stroke = Dimens.FocusRing.toPx()
-                drawCircle(color, radius = size.width / 4, center = center * 0.8f, style = Stroke(stroke))
-                drawLine(color, center * 1.15f, center * 1.65f, stroke, cap = StrokeCap.Round)
-            }
+            Icon(painterResource(R.drawable.ic_search), contentDescription = null, tint = color)
         },
         trailingIcon = if (query.isEmpty()) null else {
-            { CircleButton("✕", stringResource(R.string.search_clear), { onChange("") }, dense = compact) }
+            { CircleButton(R.drawable.ic_close, stringResource(R.string.search_clear), { onChange("") }, dense = compact) }
         },
         modifier = Modifier.fillMaxWidth(),
     )

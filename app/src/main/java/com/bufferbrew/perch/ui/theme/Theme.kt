@@ -1,5 +1,13 @@
 package com.bufferbrew.perch.ui.theme
 
+import androidx.annotation.ChecksSdkIntAtLeast
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Shapes
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
@@ -22,7 +30,9 @@ enum class AppPalette(val key: String) {
     /** The earlier warm off-white and ink look. */
     Classic("classic"),
     /** Plain black, white and grey. */
-    Mono("mono");
+    Mono("mono"),
+    /** The phone's wallpaper colours (Material You, Android 12+); Indigo on older phones. */
+    System("system");
 
     companion object {
         fun fromKey(key: String?): AppPalette = entries.firstOrNull { it.key == key } ?: Indigo
@@ -127,7 +137,7 @@ private fun paperSwatch(paper: NotePaper, accent: Swatch): Swatch? {
 }
 
 private fun swatchesFor(palette: AppPalette): Pair<Swatch, Swatch> = when (palette) {
-    AppPalette.Indigo -> IndigoLight to IndigoDark
+    AppPalette.Indigo, AppPalette.System -> IndigoLight to IndigoDark
     AppPalette.Classic -> ClassicLight to ClassicDark
     AppPalette.Mono -> MonoLight to MonoDark
 }
@@ -172,6 +182,29 @@ private val AppTypography = Typography().let { base ->
     )
 }
 
+/**
+ * One corner scale for Material components and our own surfaces: [Shapes.medium] for rows,
+ * strips and compact cards, [Shapes.extraLarge] for cards and the floating panel. Chips and
+ * buttons are pills (CircleShape).
+ */
+private val AppShapes = Shapes(
+    extraSmall = RoundedCornerShape(Dimens.CornerXs),
+    small = RoundedCornerShape(Dimens.CornerS),
+    medium = RoundedCornerShape(Dimens.CornerM),
+    large = RoundedCornerShape(Dimens.CornerLg),
+    extraLarge = RoundedCornerShape(Dimens.CornerL),
+)
+
+/**
+ * Touch area of dense (floating panel) controls. 36 dp by default and in a small panel; the
+ * panel provides the full 48 dp once it is Medium-sized or larger. Their look stays dense.
+ */
+val LocalDenseTouchTarget = staticCompositionLocalOf { Dimens.CompactTouchTarget }
+
+/** Material You colours need Android 12 (S); older phones show Indigo for [AppPalette.System]. */
+@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.S)
+fun supportsDynamicColor(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
 /** The floating bubble is always dark, whatever the theme, so it reads over any app. */
 object BubbleColors {
     val Fill = Color(0xFF0D0C1D)
@@ -186,18 +219,32 @@ object Dimens {
     val SpaceXs = 4.dp
     val SpaceS = 8.dp
     val SpaceM = 16.dp
-    val SpaceL = 20.dp
+    val SpaceL = 24.dp
     val SpaceXl = 32.dp
     /** Page margin from medium width up (tablets, unfolded foldables); phones use [SpaceM]. */
     val GutterWide = 24.dp
+    /** Space under a list for a floating action button (56 dp tall) and its margin. */
+    val FabClearance = 80.dp
     val Icon = 24.dp
+    /** Icons inside buttons and chips; [IconSmall] in the dense (floating) style. */
+    val IconInline = 18.dp
+    val IconSmall = 16.dp
+    /** A hint beside text, such as the note switcher's chevron. */
+    val IconTiny = 12.dp
     val NoteCardWidth = 220.dp
     val ReadingWidth = 720.dp
+    /** The notes list beside an open note on expanded widths. */
+    val ListPaneWidth = 360.dp
+    /** Below this the notes title bar shows Float as an icon (phones have about 380 dp). */
+    val TitleBarRoomy = 360.dp
     /** How far a screen slides as it comes in or goes out. Opacity does most of the work. */
     val ScreenSlide = 32.dp
     /** How far a pressed bubble or pill dips. */
     const val PressedScale = 0.94f
+    val CornerXs = 4.dp
+    val CornerS = 8.dp
     val CornerM = 12.dp
+    val CornerLg = 16.dp
     val CornerL = 24.dp
     val Hairline = 1.dp
     /** Dragging the floating panel's ◐ this far moves its opacity across the whole range. */
@@ -210,7 +257,7 @@ object Dimens {
     // Floating panel: slimmer chrome than the full app.
     val CompactTouchTarget = 36.dp
     val CompactButton = 28.dp
-    val CompactChipHeight = 30.dp
+    val CompactChipHeight = 32.dp
     val GrabberWidth = 36.dp
     val GrabberHeight = 4.dp
     val WaveBarWidth = 3.dp
@@ -225,15 +272,33 @@ fun PerchTheme(
     content: @Composable () -> Unit,
 ) {
     val systemDark = isSystemInDarkTheme()
-    val scheme = remember(palette, paper, systemDark) {
+    val context = LocalContext.current
+    val scheme = remember(palette, paper, systemDark, context) {
         val (light, darkSwatch) = swatchesFor(palette)
-        // A paper colour is always light, whatever the system setting.
-        paperSwatch(paper, light)?.toScheme(dark = false)
-            ?: (if (systemDark) darkSwatch else light).toScheme(systemDark)
+        val useDynamic = palette == AppPalette.System && supportsDynamicColor()
+        val dynamic = if (useDynamic) {
+            if (systemDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        } else {
+            null
+        }
+        // The wallpaper's light accent, for buttons on a sticky-note paper.
+        val dynamicAccent = if (useDynamic) dynamicLightColorScheme(context) else null
+        // A paper colour is always light, whatever the system setting. With System colours it
+        // keeps its paper but takes the wallpaper's accent for buttons.
+        paperSwatch(paper, light)?.toScheme(dark = false)?.let { paperScheme ->
+            if (dynamicAccent == null) paperScheme else paperScheme.copy(
+                primary = dynamicAccent.primary,
+                onPrimary = dynamicAccent.onPrimary,
+                tertiary = dynamicAccent.primary,
+                onTertiary = dynamicAccent.onPrimary,
+                surfaceTint = dynamicAccent.primary,
+            )
+        } ?: dynamic ?: (if (systemDark) darkSwatch else light).toScheme(systemDark)
     }
     MaterialTheme(
         colorScheme = scheme,
         typography = AppTypography,
+        shapes = AppShapes,
         content = content,
     )
 }

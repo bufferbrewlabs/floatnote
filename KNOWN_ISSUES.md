@@ -92,7 +92,7 @@
 - What changed / what shortcut was taken: to make the panel thin, its buttons, checkboxes and chips use 36 dp touch targets instead of the recommended 48 dp (`LocalMinimumInteractiveComponentSize` in `OverlayPanel`). The full app keeps 48 dp.
 - Ceiling (when this breaks): users who find the small targets hard to hit.
 - Upgrade trigger (what to do when it's hit): add a "comfortable" density option that restores 48 dp in the panel.
-- Status: open
+- Status: partly resolved 2026-11-16: a Medium-sized or larger panel now gives its controls 48 dp (`LocalDenseTouchTarget`); Small panels, the record pill and the bubble keep 36 dp.
 
 ## 2026-10-24 — Google's on-device recognizer returns empty text
 - What changed / what shortcut was taken: on the S25 Ultra, `createOnDeviceSpeechRecognizer` runs Google's offline engine in an ambient one-shot mode that detects speech but returns empty transcripts. The app now uses the phone's default recognition service (Google's dictation service, still offline with a language pack) and only falls back to the on-device API; it switches automatically after two empty-after-speech results.
@@ -249,4 +249,12 @@
 - Shortcut: in that fallback the service has no microphone type, so recording while another app is in front may be silenced or refused by Android. Not checked on a device; the fallback itself was seen to be needed only on a very slow emulator.
 - Ceiling (when this breaks): if this shows up on real phones, voice from the bubble over other apps would quietly fail after a slow launch.
 - Upgrade trigger (what to do when it's hit): note the fallback in the service and, on the next Record, restart the service from `FloatLaunchActivity` (a visible Activity) to regain the microphone type before recording.
+- Status: open
+
+## 2026-11-16 — Visual refresh (Phase 3: icons, header, System colours, shapes, two panes, opacity, touch areas)
+- What changed: vector icons replace the text glyphs; the notes title bar is pinned with History, Dictionary, Settings and Float, and New note is a floating button; a "System (wallpaper colours)" palette on Android 12+; one `Shapes` scale and spacing on the 4/8 grid; the list and the open note side by side on expanded widths; a two-stage opacity (`overlay/PanelOpacity`: text stays solid down to 50%, then fades with the paper to the 30% floor); 48 dp touch areas in Medium and Large panels.
+- Verified on an Android 15 emulator (debug build): the floating panel at 50% over the launcher before and after (text solid after), its header icons and that "Untitled" fits in a Small panel, the notes list with the new title bar and New note button, Settings and Appearance, selecting System colours (the app re-themes from the wallpaper), and two panes at 2400x1600 (list, empty pane, open note with ✕), with Float shown as an icon in the narrow list pane and labelled on a phone. Contrast for the opacity change was computed, not measured on screen.
+- Not verified: dark mode screenshots (each dark-mode switch took 1.5-2.5 min to recover on this emulator, main's build as well), the Medium/Large panel's 48 dp touch areas on screen, System colours on Android 8-11 (falls back to Indigo by design), Samsung Edge, TalkBack with the new icon buttons, and a real tablet or foldable.
+- Ceiling (when this breaks): the splash and the window before Compose draws stay Indigo paper even with System colours; the floating panel's "!" and "…" status marks are still text.
+- Upgrade trigger (what to do when it's hit): if the Indigo splash looks wrong with System colours, use a dynamic `windowSplashScreenBackground` on Android 12+.
 - Status: open

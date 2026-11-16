@@ -66,6 +66,15 @@ Run `./gradlew testDebugUnitTest` and `assembleDebug` before calling a change do
 - `ui/editor/NoteEditorContent.kt`: the stateless editor, driven through `NoteEditorActions`.
 - `ui/theme/Motion.kt`: every duration, easing and spring (`fade`, `enter`, `exit`, `move`, `snappy`).
   Compose scales them by the system animator setting in both hosts; never time UI with `delay()`.
+- `ui/components/Buttons.kt`: `PillButton` (optional leading `icon`), `CircleButton` (a drawable, with
+  a disabled state) and `BackButton`. Icons are local vector drawables `res/drawable/ic_*.xml`
+  (Material shapes), tinted from the theme; don't put text glyphs (‹ ✕ ◐ …) in buttons.
+- `ui/theme/Theme.kt`: palettes (Indigo, Classic, Mono, and System = Material You on Android 12+,
+  `supportsDynamicColor()`), `AppShapes` (use `MaterialTheme.shapes`, not `RoundedCornerShape`),
+  `Dimens` and `LocalDenseTouchTarget` (36 dp, or 48 dp in a Medium+ floating panel).
+- Full app layout (`MainActivity`): on expanded widths the notes screen is two panes (the list,
+  then the note at reading width) via the window size class; `NotesTitleBar` in the list measures
+  its own width and drops Float to an icon below 360 dp. New note is an extended FAB.
 - `ui/components/Screens.kt`: `ScreenSwitcher`, the one screen-change transition (shared-axis slide
   and fade) used by the full app, its Settings pages and the floating panel. In the full app it is
   seekable and follows predictive back (`backTo`); screens are keyed by small sealed types
@@ -93,6 +102,9 @@ Run `./gradlew testDebugUnitTest` and `assembleDebug` before calling a change do
   - `WindowDrag.kt`: drag/tap using raw screen coordinates, reported as the total offset since
     the drag started (the window is placed at start + offset, never stepped). Use it for anything that moves
     the window; Compose drag gestures jitter because the window moves under the finger.
+  - `PanelOpacity.kt`: the two-stage fade, pure and tested: down to 50% only the paper fades and
+    text stays solid; from 50% to the 30% floor the content fades with it. Paper is drawn in
+    `drawBehind`, content alpha is a graphics layer, so fading never recomposes.
   - `WindowGeometry.kt`: pure clamp/resize maths, unit-tested, plus `PanelSize` presets
     (S/M/L; default Small). The panel's ◐ button shows size chips and the opacity slider.
 - `FloatLaunchActivity`: the "Floating Perch" launcher entry for the Edge panel, the QS tile, the
@@ -177,7 +189,7 @@ Run `./gradlew testDebugUnitTest` and `assembleDebug` before calling a change do
   durations or easings: use `Motion`. Animate with `graphicsLayer` (scale, alpha, translation),
   never window size per frame and never `LayoutParams.alpha`.
 - Visual style: palette taken from the app icon (deep indigo tile, violet accent, lavender-white
-  paper), set in `ui/theme/Theme.kt`. Serif titles, pill chips (`ui/components/Buttons.kt`) with a
+  paper), set in `ui/theme/Theme.kt` (plus the optional System palette). Vector icons, serif titles, pill chips (`ui/components/Buttons.kt`) with a
   keyboard focus ring, large rounded cards.
   The bubble is a small dark pill with a waveform and stays dark in both themes (`BubbleColors`).
 

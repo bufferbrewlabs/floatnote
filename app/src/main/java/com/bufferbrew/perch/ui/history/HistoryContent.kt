@@ -10,7 +10,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -118,7 +117,7 @@ fun HistoryContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .animateItem()
-                        .clip(RoundedCornerShape(Dimens.CornerM))
+                        .clip(MaterialTheme.shapes.medium)
                         .background(colors.surfaceContainerLow)
                         .padding(if (compact) Dimens.SpaceS else Dimens.SpaceM),
                     verticalArrangement = Arrangement.spacedBy(Dimens.SpaceXs),
@@ -166,6 +165,7 @@ fun HistoryContent(
                                         stringResource(if (playing) R.string.history_stop_playing else R.string.history_play),
                                         { if (playing) player.stop() else player.play(entry.id, audio) },
                                         dense = compact,
+                                        icon = if (playing) R.drawable.ic_stop else R.drawable.ic_play,
                                     )
                                     if (onTranscribeAgain != null) {
                                         PillButton(stringResource(R.string.history_transcribe_again), { onTranscribeAgain(entry) }, dense = compact)

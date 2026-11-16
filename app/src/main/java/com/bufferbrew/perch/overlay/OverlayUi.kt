@@ -1,5 +1,9 @@
 package com.bufferbrew.perch.overlay
 
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.Icon
 import androidx.annotation.DrawableRes
@@ -412,20 +416,33 @@ fun OverlayPanel(
     }
     val shape = MaterialTheme.shapes.extraLarge
 
+    val paperColor = MaterialTheme.colorScheme.surface.copy(alpha = if (focusedNote) FocusedNoteBackgroundAlpha else 1f)
+    val edgeColor = MaterialTheme.colorScheme.outlineVariant
     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dimens.CompactTouchTarget) {
         Surface(
+            // Two-stage fade (PanelOpacity): the paper and its edge take your opacity, drawn
+            // here; the content keeps its own, so text stays readable until the slider's
+            // midpoint. Both read the opacity in draw/layer lambdas, so fading never recomposes.
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer { alpha = shownOpacity() }
-                .border(Dimens.Hairline, MaterialTheme.colorScheme.outlineVariant, shape),
+                .drawBehind {
+                    val paper = PanelOpacity.paper(shownOpacity())
+                    val outline = shape.createOutline(size, layoutDirection, this)
+                    drawOutline(outline, paperColor.copy(alpha = paperColor.alpha * paper))
+                    drawOutline(
+                        outline,
+                        edgeColor.copy(alpha = edgeColor.alpha * paper),
+                        style = Stroke(Dimens.Hairline.toPx()),
+                    )
+                },
             shape = shape,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = if (focusedNote) FocusedNoteBackgroundAlpha else 1f),
+            color = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onSurface,
             // No shadow: the window is exactly the panel's size, so a shadow is cut off at its
             // edges, and it shows through the see-through background as a grey haze. The
             // hairline border separates the panel from the app underneath instead.
         ) {
-            Box(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize().graphicsLayer { alpha = PanelOpacity.content(shownOpacity()) }) {
                 // Header buttons sit SpaceXs from the edge; text and the body get the same
                 // SpaceS on both sides. Reserve the resize handle's entire touch area.
                 Column(

@@ -332,7 +332,7 @@ class OverlayWindow(
                                 resizing = false
                                 savePanel()
                             },
-                            modifier = Modifier.align(Alignment.BottomEnd).graphicsLayer { alpha = shownOpacity },
+                            modifier = Modifier.align(Alignment.BottomEnd).graphicsLayer { alpha = PanelOpacity.content(shownOpacity) },
                         )
                     }
                 }

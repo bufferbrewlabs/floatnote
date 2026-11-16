@@ -1,5 +1,9 @@
 package com.bufferbrew.perch.ui.theme
 
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
@@ -22,7 +26,9 @@ enum class AppPalette(val key: String) {
     /** The earlier warm off-white and ink look. */
     Classic("classic"),
     /** Plain black, white and grey. */
-    Mono("mono");
+    Mono("mono"),
+    /** The phone's wallpaper colours (Material You, Android 12+); Indigo on older phones. */
+    System("system");
 
     companion object {
         fun fromKey(key: String?): AppPalette = entries.firstOrNull { it.key == key } ?: Indigo
@@ -127,7 +133,7 @@ private fun paperSwatch(paper: NotePaper, accent: Swatch): Swatch? {
 }
 
 private fun swatchesFor(palette: AppPalette): Pair<Swatch, Swatch> = when (palette) {
-    AppPalette.Indigo -> IndigoLight to IndigoDark
+    AppPalette.Indigo, AppPalette.System -> IndigoLight to IndigoDark
     AppPalette.Classic -> ClassicLight to ClassicDark
     AppPalette.Mono -> MonoLight to MonoDark
 }
@@ -171,6 +177,9 @@ private val AppTypography = Typography().let { base ->
         titleMedium = base.titleMedium.copy(fontFamily = FontFamily.Serif),
     )
 }
+
+/** Material You colours need Android 12 (S); older phones show Indigo for [AppPalette.System]. */
+fun supportsDynamicColor(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
 /** The floating bubble is always dark, whatever the theme, so it reads over any app. */
 object BubbleColors {
@@ -230,11 +239,27 @@ fun PerchTheme(
     content: @Composable () -> Unit,
 ) {
     val systemDark = isSystemInDarkTheme()
-    val scheme = remember(palette, paper, systemDark) {
+    val context = LocalContext.current
+    val scheme = remember(palette, paper, systemDark, context) {
         val (light, darkSwatch) = swatchesFor(palette)
-        // A paper colour is always light, whatever the system setting.
-        paperSwatch(paper, light)?.toScheme(dark = false)
-            ?: (if (systemDark) darkSwatch else light).toScheme(systemDark)
+        val dynamic = if (palette == AppPalette.System && supportsDynamicColor()) {
+            if (systemDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        } else {
+            null
+        }
+        // A paper colour is always light, whatever the system setting. With System colours it
+        // keeps its paper but takes the wallpaper's accent for buttons.
+        paperSwatch(paper, light)?.toScheme(dark = false)?.let { paperScheme ->
+            if (dynamic == null) paperScheme else dynamicLightColorScheme(context).let { accent ->
+                paperScheme.copy(
+                    primary = accent.primary,
+                    onPrimary = accent.onPrimary,
+                    tertiary = accent.primary,
+                    onTertiary = accent.onPrimary,
+                    surfaceTint = accent.primary,
+                )
+            }
+        } ?: dynamic ?: (if (systemDark) darkSwatch else light).toScheme(systemDark)
     }
     MaterialTheme(
         colorScheme = scheme,

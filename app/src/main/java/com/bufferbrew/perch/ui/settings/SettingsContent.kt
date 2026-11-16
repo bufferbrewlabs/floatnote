@@ -1,5 +1,6 @@
 package com.bufferbrew.perch.ui.settings
 
+import com.bufferbrew.perch.ui.theme.supportsDynamicColor
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.res.painterResource
@@ -562,13 +563,15 @@ private fun AppearancePage(palette: AppPalette, onPaletteChange: (AppPalette) ->
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     Column(verticalArrangement = Arrangement.spacedBy(Dimens.SpaceS)) {
-        AppPalette.entries.forEach { option ->
+        // System colours only where the phone has them (Android 12+).
+        AppPalette.entries.filter { it != AppPalette.System || supportsDynamicColor() }.forEach { option ->
             PillButton(
                 text = stringResource(
                     when (option) {
                         AppPalette.Indigo -> R.string.palette_indigo
                         AppPalette.Classic -> R.string.palette_classic
                         AppPalette.Mono -> R.string.palette_mono
+                        AppPalette.System -> R.string.palette_system
                     },
                 ),
                 onClick = { onPaletteChange(option) },

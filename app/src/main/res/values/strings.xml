@@ -204,6 +204,7 @@
     <string name="palette_indigo">Indigo (icon)</string>
     <string name="palette_classic">Classic cream</string>
     <string name="palette_mono">Black and white</string>
+    <string name="palette_system">System (wallpaper colours)</string>
     <string name="settings_page_floating_help">What the Edge panel, tile and Floating Perch icon open</string>
     <string name="back_to_settings">Settings</string>
     <string name="edit_undo">Undo</string>

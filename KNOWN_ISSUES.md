@@ -226,9 +226,9 @@
 - Status: open (device visual/accessibility check pending)
 
 ## 2026-11-10 — Renamed to Perch, new application ID
-- What changed / what shortcut was taken: package and `applicationId` are now `com.bufferbrew.perch` (database `perch.db`, Keystore alias `perch_whisper_key`, signing properties `PERCH_*`, hook override `PERCH_APK_DIR`). Android sees it as a new app: the old install keeps its notes, settings and API key. No in-app migration; move notes with Settings → Backup (export in the old app, import in Perch) and enter the key again. Import accepts any `"app"` name so old backups still load. The GitHub repo and the checkout folder are still called `floatnote`, so `PRIVACY.md` links to the old repo URL.
+- What changed / what shortcut was taken: package and `applicationId` are now `com.bufferbrew.perch` (database `perch.db`, Keystore alias `perch_whisper_key`, signing properties `PERCH_*`, hook override `PERCH_APK_DIR`). Android sees it as a new app: the old install keeps its notes, settings and API key. No in-app migration; move notes with Settings → Backup (export in the old app, import in Perch) and enter the key again. Import accepts any `"app"` name so old backups still load. On 2026-11-18 the GitHub repo was renamed to `bufferbrewlabs/perch` (GitHub redirects the old `floatnote` URL), the checkout folder to `android/perch`, and `PRIVACY.md` now links to the new repo.
 - Ceiling (when this breaks): anyone else with the old app installed loses nothing but has to move notes by hand.
-- Upgrade trigger (what to do when it's hit): rename the repo (`gh repo rename perch`, update the remote and the PRIVACY link) and the folder; uninstall the old app once notes are imported.
+- Upgrade trigger (what to do when it's hit): uninstall the old app once notes are imported (the repo, remote, PRIVACY link and folder rename is done).
 - Status: open
 
 ## 2026-11-13 — UI and motion refresh

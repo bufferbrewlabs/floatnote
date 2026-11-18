@@ -33,4 +33,4 @@ Your API key is sent only to the server address you set, only over https, and ne
 
 ## Contact
 
-Questions: open an issue at https://github.com/bufferBrew/floatnote/issues.
+Questions: open an issue at https://github.com/bufferbrewlabs/perch/issues.

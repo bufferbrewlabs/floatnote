@@ -3,7 +3,8 @@
 Android note-taking app built to be used *on top of* other apps. A floating, adjustable-opacity
 note window, a minimised draggable bubble, and voice capture that starts by default.
 Not a Brew product: don't apply brew/AGENTS.md rules or rename to <Thing>Brew.
-Solo developer, main-branch workflow.
+Solo developer, pull-request workflow: `main` on GitHub only accepts changes through a PR
+(repository rule), so work on a branch, push it and open a PR; never push to `main` directly.
 
 ## Product requirements (source of truth)
 1. Note content is a list of blocks:
